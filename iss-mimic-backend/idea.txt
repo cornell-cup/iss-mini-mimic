@@ -1,0 +1,3 @@
+This part will be connected to the webpage via pestolink :)
+
+Main goal for the first time is just to call the telemetry api and make the robot recieve the signal
