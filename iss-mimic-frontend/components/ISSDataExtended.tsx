@@ -27,7 +27,7 @@ export default function ISSDataExtended() {
   // State variables to store the telemetry data
   const [telemetryItems, setTelemetryItems] = useState<Record<string, TelemetryItem>>({});
   const [signalStatus, setSignalStatus] = useState<string>('Connecting...');
-  const [signalClass, setSignalClass] = useState<string>('bg-yellow-500'); // For styling
+  const [signalClass, setSignalClass] = useState<string>('bg-warning'); // For styling
 
   useEffect(() => {
     // Initialize the Lightstreamer client
@@ -95,14 +95,14 @@ export default function ISSDataExtended() {
         if (status === '24') {
           if (difference > 0.00153680542553047) {
             setSignalStatus("Stale Signal");
-            setSignalClass("bg-yellow-500");
+            setSignalClass("bg-warning");
           } else {
             setSignalStatus("Signal Acquired");
-            setSignalClass("bg-green-500");
+            setSignalClass("bg-success");
           }
         } else {
           setSignalStatus("Signal Lost");
-          setSignalClass("bg-red-500");
+          setSignalClass("bg-danger");
         }
       }
     });
@@ -123,33 +123,39 @@ export default function ISSDataExtended() {
   }, []); // Empty dependency array means this effect runs once on mount
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">ISS Telemetry Data</h2>
-        <span className={`px-3 py-1 rounded-full text-white ${signalClass}`}>
+    <div className="card shadow">
+      <div className="card-header d-flex justify-content-between align-items-center">
+        <h5 className="card-title mb-0">ISS Telemetry Data</h5>
+        <span className={`badge ${signalClass} text-white`}>
           {signalStatus}
         </span>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {TELEMETRY_ITEMS.map(item => {
-          const telemetry = telemetryItems[item.id];
-          return (
-            <div key={item.id} className="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
-              <h3 className="text-lg font-medium mb-2">{item.name}</h3>
-              <p className="text-2xl font-mono text-center">
-                {telemetry?.value || "Loading..."}
-                {telemetry?.unit && <span className="text-sm ml-1">{telemetry.unit}</span>}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                Timestamp: {telemetry?.timestamp || "Loading..."}
-              </p>
-            </div>
-          );
-        })}
+      <div className="card-body">
+        <div className="row row-cols-1 row-cols-md-2 g-4">
+          {TELEMETRY_ITEMS.map(item => {
+            const telemetry = telemetryItems[item.id];
+            return (
+              <div key={item.id} className="col">
+                <div className="card h-100 bg-light">
+                  <div className="card-body">
+                    <h5 className="card-title" style={{ color: "black" }}>{item.name}</h5>
+                    <p className="display-6 text-center text-mono" style={{ color: "black" }}>
+                      {telemetry?.value || "Loading..."}
+                      {telemetry?.unit && <small className="ms-1">{telemetry.unit}</small>}
+                    </p>
+                    <p className="card-text text-muted small text-center">
+                      Timestamp: {telemetry?.timestamp || "Loading..."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-      
-      <div className="mt-6 text-sm text-gray-500 dark:text-gray-400 text-center">
+
+      <div className="card-footer text-center text-white small" style={{ color: "white" }}>
         Live data from International Space Station via Lightstreamer
       </div>
     </div>
