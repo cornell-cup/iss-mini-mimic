@@ -14,7 +14,7 @@ export default function Sphere() {
             depth={35}
             count={10000}
             factor={1}
-            saturation={0}
+            saturation={6}
             fade
             speed={2}
           />
@@ -22,9 +22,11 @@ export default function Sphere() {
         <mesh>
         <sphereGeometry args={[1, 32, 32]} /> {/* args: radius, widthSegments, heightSegments */}
         <meshStandardMaterial color="blue" />
+        <SolarPanel position={[2, 0, 0]} rotation={[0, Math.PI / 2  , 0]} color="green"/>
+        <SolarPanel position={[4.5, 0, 0]} rotation={[0, Math.PI / 2  , 0]} color="green"/>
+        <SolarPanel position={[-2, 0, 0]} rotation={[0, Math.PI / 2  , 0]} color="orange" />   
+        <SolarPanel position={[-4.5, 0, 0]} rotation={[0, Math.PI / 2  , 0]} color="orange" />   
         </mesh> 
-        <SolarPanel position={[2, 0, 0]} rotation={[0, Math.PI / 2  , 0]} />
-        <SolarPanel position={[-2, 0, 0]} rotation={[0, Math.PI / 2  , 0]} />
         <OrbitControls />
     </Canvas>
     </div>

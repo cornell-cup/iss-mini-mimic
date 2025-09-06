@@ -32,13 +32,13 @@ export default function Navbar() {
               </Link>
             </li>
             <li className="nav-item">
-              <Link href="https://github.com/David-Fuq/Cornell-ISS-Mimic-Mini.git" className="nav-link active">
-                About
+              <Link href="/3d-model" className="nav-link active">
+                3D Model
               </Link>
             </li>
             <li className="nav-item">
-              <Link href="/3d-model" className="nav-link active">
-                3D Model
+              <Link href="https://github.com/David-Fuq/Cornell-ISS-Mimic-Mini.git" className="nav-link">
+                Github Repo
               </Link>
             </li>
           </ul>
