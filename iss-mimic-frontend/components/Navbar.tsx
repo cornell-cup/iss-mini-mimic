@@ -33,7 +33,12 @@ export default function Navbar() {
             </li>
             <li className="nav-item">
               <Link href="/3d-model" className="nav-link active">
-                3D Model
+                3D Model (Live)
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link href="/3d-model/manual" className="nav-link active">
+                3D Model (Manual)
               </Link>
             </li>
             <li className="nav-item">

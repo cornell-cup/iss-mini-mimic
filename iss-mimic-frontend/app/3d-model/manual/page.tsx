@@ -12,45 +12,17 @@ export default function IssModel() {
 
     return (
     <div className="position-relative">
-        {/* Telemetry overlay 
+        {/* Telemetry overlay */}
         <div className="position-absolute top-0 end-0 p-3 bg-dark bg-opacity-75 text-white m-3 rounded shadow-sm" style={{ zIndex: 10, maxWidth: '300px' }}>
             <h5 className="mb-3 fw-bold">ISS Telemetry</h5>
             <div className="d-flex flex-column gap-2">
                 <div className="d-flex justify-content-between">
-                    <span>Temperature:</span>
-                    <TelemetryDisplay 
-                        itemId="USLAB000018" 
-                        showLabel={false} 
-                        className="fw-bold"
-                    />
-                </div>
-                <div className="d-flex justify-content-between">
-                    <span>Pressure:</span>
-                    <TelemetryDisplay 
-                        itemId="USLAB000024" 
-                        showLabel={false} 
-                        className="fw-bold"
-                    />
-                </div>
-                <div className="d-flex justify-content-between">
-                    <span>O2 Pressure:</span>
-                    <TelemetryDisplay 
-                        itemId="NODE3000002" 
-                        showLabel={false} 
-                        className="fw-bold"
-                    />
-                </div>
-                <div className="d-flex justify-content-between">
-                    <span>CO2 Pressure:</span>
-                    <TelemetryDisplay 
-                        itemId="NODE3000003" 
-                        showLabel={false} 
-                        className="fw-bold"
-                    />
+                    <span>Degree:</span>
+                    <h1>ENTER VALUE HERE</h1>
                 </div>
             </div>
         </div>
-        */}
+        
 
         {/* 3D Canvas */}
         <div style={{ height: '100vh', width: '100vw' }}>

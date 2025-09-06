@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import Navbar from "@/components/Navbar";
+import { TelemetryProvider } from "@/components/TelemetryContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,8 +30,10 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable}`}
       >
-        <Navbar />
-        {children}
+        <TelemetryProvider>
+          <Navbar />
+          {children}
+        </TelemetryProvider>
       </body>
     </html>
   );
