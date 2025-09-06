@@ -1,7 +1,3 @@
-function alert(message)
-{
-
-}
 var ls = require("lightstreamer-client");
 var fs = require('fs');
 var lsClient = new ls.LightstreamerClient("http://push.lightstreamer.com","ISSLIVE");

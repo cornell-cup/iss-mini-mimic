@@ -57,7 +57,7 @@ export default function ISSDataExtended() {
     // Add listener for the telemetry data
     telemetrySub.addListener({
       onSubscription: function() {
-        console.log("Subscribed to telemetry data");
+        console.log("Subscribed to telemetry data!");
       },
       onUnsubscription: function() {
         console.log("Unsubscribed from telemetry data");
