@@ -3,24 +3,42 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Sky, Stars } from '@react-three/drei';
 import SolarPanel from '@/components/SolarPanel';
-import TelemetryDisplay from '@/components/TelemetryDisplay';
-import { useTelemetry, TELEMETRY_ITEMS } from '@/components/TelemetryContext';
+import React, {useState, ChangeEvent, FormEvent} from 'react';
 
 export default function IssModel() {
-    const { telemetryItems } = useTelemetry();
-    const telemetry = telemetryItems["S0000004"];
+    const [sliderValue, setSliderValue] = useState(0);
+    const [angle, setAngle] = useState(0);
+
+    const handleSliderChange = (event: ChangeEvent<HTMLInputElement>) => {
+        setSliderValue(Number(event.target.value));
+    };
+
+    const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setAngle(sliderValue);
+    };
 
     return (
     <div className="position-relative">
         {/* Telemetry overlay */}
         <div className="position-absolute top-0 end-0 p-3 bg-dark bg-opacity-75 text-white m-3 rounded shadow-sm" style={{ zIndex: 10, maxWidth: '300px' }}>
-            <h5 className="mb-3 fw-bold">ISS Telemetry</h5>
-            <div className="d-flex flex-column gap-2">
-                <div className="d-flex justify-content-between">
-                    <span>Degree:</span>
-                    <h1>ENTER VALUE HERE</h1>
-                </div>
-            </div>
+            <h5 className="mb-3 fw-bold">Angle for Solar Panels</h5>
+            <form onSubmit={handleSubmit}>
+            <label htmlFor="my-slider">Select a value:</label>
+            <input
+                type="range"
+                id="my-slider"
+                min="0"
+                max="360"
+                value={sliderValue}
+                onChange={handleSliderChange}
+            />
+            <input  
+            onChange = {(e) => setSliderValue(Number(e.target.value))} 
+            value = {sliderValue}/>
+            <button type="submit" className="btn btn-primary">Set Angle</button>
+
+            </form>
         </div>
         
 
@@ -43,8 +61,8 @@ export default function IssModel() {
                     <meshStandardMaterial color="blue" />
                     <SolarPanel position={[2, 0, 0]} rotation={[0, Math.PI / 2, 0]} color="green"/>
                     <SolarPanel position={[4.5, 0, 0]} rotation={[0, Math.PI / 2, 0]} color="green"/>
-                    <SolarPanel position={[-2, 0, 0]} rotation={[telemetry?.value ? Number(telemetry.value)*(Math.PI/180) : 0, Math.PI / 2, 0]} color="orange" />   
-                    <SolarPanel position={[-4.5, 0, 0]} rotation={[telemetry?.value ? Number(telemetry.value)*(Math.PI/180) : 0, Math.PI / 2, 0]} color="orange" />   
+                    <SolarPanel position={[-2, 0, 0]} rotation={[Number(angle)*(Math.PI/180), Math.PI / 2, 0]} color="orange" />   
+                    <SolarPanel position={[-4.5, 0, 0]} rotation={[Number(angle)*(Math.PI/180), Math.PI / 2, 0]} color="orange" />   
                 </mesh> 
                 <OrbitControls />
             </Canvas>

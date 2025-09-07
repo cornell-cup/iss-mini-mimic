@@ -57,11 +57,11 @@ export default function IssModel() {
             <Canvas>
                 <ambientLight intensity={0.5} />
                 <Stars
-                    radius={0.001}
-                    depth={35}
+                    radius={0.01}
+                    depth={30}
                     count={10000}
                     factor={1}
-                    saturation={6}
+                    saturation={1}
                     fade
                     speed={2}
                 />
