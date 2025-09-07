@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
   const [isExpanded, setIsExpanded] = useState(false);
+  const pathname = usePathname();
   
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
@@ -27,22 +29,22 @@ export default function Navbar() {
         <div className={`collapse navbar-collapse ${isExpanded ? 'show' : ''}`} id="navbarNav">
           <ul className="navbar-nav me-auto mb-2 mb-lg-0">
             <li className="nav-item">
-              <Link href="/" className="nav-link active">
+              <Link href="/" className={`nav-link ${pathname === '/' ? 'active' : ''}`}>
                 ISS Telemetry
               </Link>
             </li>
             <li className="nav-item">
-              <Link href="/3d-model" className="nav-link active">
+              <Link href="/3d-model" className={`nav-link ${pathname === '/3d-model' ? 'active' : ''}`}>
                 3D Model (Live)
               </Link>
             </li>
             <li className="nav-item">
-              <Link href="/3d-model/manual" className="nav-link active">
+              <Link href="/3d-model/manual" className={`nav-link ${pathname === '/3d-model/manual' ? 'active' : ''}`}>
                 3D Model (Manual)
               </Link>
             </li>
             <li className="nav-item">
-              <Link href="https://github.com/David-Fuq/Cornell-ISS-Mimic-Mini.git" className="nav-link">
+              <Link href="https://github.com/David-Fuq/Cornell-ISS-Mimic-Mini.git" className="nav-link" target="_blank">
                 Github Repo
               </Link>
             </li>

@@ -37,6 +37,7 @@ export default function IssModel() {
             onChange = {(e) => setSliderValue(Number(e.target.value))} 
             value = {sliderValue}/>
             <button type="submit" className="btn btn-primary">Set Angle</button>
+            <button type="button" className="btn btn-primary" onClick={() => {setSliderValue(0); setAngle(0);}}>0</button>
 
             </form>
         </div>
