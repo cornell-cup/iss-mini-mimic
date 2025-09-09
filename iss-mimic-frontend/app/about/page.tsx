@@ -38,7 +38,7 @@ export default function SimpleRobotControls() {
       axes: axisValues,
       buttons: { byte0: buttonStates }
     });
-    
+    console.log("Sending packet:", packet);
     sendPacket(packet);
   };
   
@@ -50,6 +50,7 @@ export default function SimpleRobotControls() {
     const packet = createRobotPacket({ 
       buttons: { byte0: newButtonStates }
     });
+    console.log("Sending packet:", packet);
     sendPacket(packet);
   };
   
