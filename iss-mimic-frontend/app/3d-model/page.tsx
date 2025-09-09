@@ -6,11 +6,34 @@ import SolarPanel from '@/components/SolarPanel';
 import TelemetryDisplay from '@/components/TelemetryDisplay';
 import { useTelemetry, TELEMETRY_ITEMS } from '@/components/TelemetryContext';
 import BluetoothConnectionInfo from '@/components/BluetoothConnectionInfo';
-
+import { useBluetooth } from '@/contexts/BluetoothContext';
+import { createRobotPacket, setButtonBit } from '@/utils/robotPackets';
+import { useEffect } from 'react';
 
 export default function IssModel() {
     const { telemetryItems } = useTelemetry();
     const telemetry = telemetryItems["S0000004"];
+
+    useEffect(() => {
+        console.log('Telemetry value changed:', telemetry?.value);
+        const packet = createRobotPacket({ 
+                        angles: { angle0: Math.trunc(Number(telemetry?.value)) },
+                        buttons: { byte0: 1 } 
+                        });
+                    sendPacket(packet);
+                    console.log(packet);
+    }, [Math.trunc(Number(telemetry?.value))]);
+
+    const { 
+            isConnected,
+            connecting,
+            connectionStatus,
+            statusColor,
+            telemetryData,
+            connectToDevice,
+            disconnectFromDevice,
+            sendPacket,
+        } = useBluetooth();
 
     return (
     <div className="position-relative">

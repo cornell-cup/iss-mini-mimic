@@ -1,39 +1,49 @@
 /**
- * Creates an XRP robot control packet
+ * Creates an XRP robot control packet with support for 0-360 degree angles
  * 
- * @param axes Object with axis values (0-255, where 127 is center)
+ * @param angles Object with angle values (0-360 degrees)
  * @param buttons Object with button state bytes
  * @param keyboardKeys Array of keyboard key codes (optional)
  * @returns Uint8Array packet ready to send
  */
 export function createRobotPacket({
-  axes = { axis0: 127, axis1: 127, axis2: 127, axis3: 127 },
+  angles = { angle0: 0, angle1: 0, angle2: 0, angle3: 0 },
   buttons = { byte0: 0, byte1: 0 },
   keyboardKeys = []
 }: {
-  axes?: { axis0?: number; axis1?: number; axis2?: number; axis3?: number };
+  angles?: { angle0?: number; angle1?: number; angle2?: number; angle3?: number };
   buttons?: { byte0?: number; byte1?: number };
   keyboardKeys?: number[];
 } = {}): Uint8Array {
-  // Create packet with default values
-  const packet = new Uint8Array(18).fill(0);
+  // Create packet - increased size to accommodate 2 bytes per angle
+  const packet = new Uint8Array(26).fill(0);
   
   // Set packet version
   packet[0] = 0x01;
   
-  // Set axis values (with defaults at center position)
-  packet[1] = axes.axis0 !== undefined ? axes.axis0 : 127;
-  packet[2] = axes.axis1 !== undefined ? axes.axis1 : 127;
-  packet[3] = axes.axis2 !== undefined ? axes.axis2 : 127;
-  packet[4] = axes.axis3 !== undefined ? axes.axis3 : 127;
+  // Ensure angles are within valid range and convert to integers
+  const angle0 = Math.min(360, Math.max(0, Math.floor(angles.angle0 ?? 0)));
+  const angle1 = Math.min(360, Math.max(0, Math.floor(angles.angle1 ?? 0)));
+  const angle2 = Math.min(360, Math.max(0, Math.floor(angles.angle2 ?? 0)));
+  const angle3 = Math.min(360, Math.max(0, Math.floor(angles.angle3 ?? 0)));
+  
+  // Set angle values (each angle uses 2 bytes: low byte first, then high byte)
+  packet[1] = angle0 & 0xFF;         // Angle 0 - low byte
+  packet[2] = (angle0 >> 8) & 0xFF;  // Angle 0 - high byte
+  packet[3] = angle1 & 0xFF;         // Angle 1 - low byte
+  packet[4] = (angle1 >> 8) & 0xFF;  // Angle 1 - high byte
+  packet[5] = angle2 & 0xFF;         // Angle 2 - low byte
+  packet[6] = (angle2 >> 8) & 0xFF;  // Angle 2 - high byte
+  packet[7] = angle3 & 0xFF;         // Angle 3 - low byte
+  packet[8] = (angle3 >> 8) & 0xFF;  // Angle 3 - high byte
   
   // Set button states
-  packet[5] = buttons.byte0 !== undefined ? buttons.byte0 : 0;
-  packet[6] = buttons.byte1 !== undefined ? buttons.byte1 : 0;
+  packet[9] = buttons.byte0 !== undefined ? buttons.byte0 : 0;
+  packet[10] = buttons.byte1 !== undefined ? buttons.byte1 : 0;
   
   // Set keyboard keys (if any)
-  for (let i = 0; i < Math.min(keyboardKeys.length, 11); i++) {
-    packet[7 + i] = keyboardKeys[i];
+  for (let i = 0; i < Math.min(keyboardKeys.length, 15); i++) {
+    packet[11 + i] = keyboardKeys[i];
   }
   
   return packet;
@@ -56,32 +66,39 @@ export function setButtonBit(currentByte: number, buttonIndex: number, isPressed
 }
 
 /**
+ * For backward compatibility with axis-based systems (maps 0-255 to 0-360)
+ * 
+ * @param axisValue Axis value (0-255)
+ * @returns Equivalent angle (0-360)
+ */
+export function axisToAngle(axisValue: number): number {
+  // Map 0-255 to 0-360
+  return Math.floor((axisValue * 360) / 255);
+}
+
+/**
  * Example usage patterns
  */
 export const examplePackets = {
-  // Stop all movement (center all axes)
-  stop: createRobotPacket(),
+  // Set all angles to 0
+  zeroAngles: createRobotPacket(),
   
-  // Move forward (reduce axis1 value)
-  moveForward: createRobotPacket({ axes: { axis1: 0 } }),
+  // Set specific angles
+  setAngles: createRobotPacket({ 
+    angles: { angle0: 90, angle1: 180, angle2: 270, angle3: 360 } 
+  }),
   
-  // Move backward (increase axis1 value)
-  moveBackward: createRobotPacket({ axes: { axis1: 255 } }),
+  // Set first angle to 45 degrees
+  setAngle0: createRobotPacket({ angles: { angle0: 45 } }),
   
-  // Turn right (increase axis0 value)
-  turnRight: createRobotPacket({ axes: { axis0: 255 } }),
-  
-  // Turn left (decrease axis0 value)
-  turnLeft: createRobotPacket({ axes: { axis0: 0 } }),
+  // Set second angle to 135 degrees
+  setAngle1: createRobotPacket({ angles: { angle1: 135 } }),
   
   // Press first button
   pressButton0: createRobotPacket({ buttons: { byte0: 1 } }), // 2^0 = 1
   
   // Press second button
   pressButton1: createRobotPacket({ buttons: { byte0: 2 } }), // 2^1 = 2
-  
-  // Press third button
-  pressButton2: createRobotPacket({ buttons: { byte0: 4 } }), // 2^2 = 4
   
   // Press multiple buttons
   pressMultipleButtons: createRobotPacket({ buttons: { byte0: 7 } }), // 1+2+4 = 7 (buttons 0, 1, and 2)

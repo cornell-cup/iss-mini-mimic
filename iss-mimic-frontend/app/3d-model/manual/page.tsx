@@ -6,6 +6,7 @@ import SolarPanel from '@/components/SolarPanel';
 import React, {useState, ChangeEvent, FormEvent} from 'react';
 import BluetoothConnectionInfo from '@/components/BluetoothConnectionInfo';
 import { useBluetooth } from '@/contexts/BluetoothContext';
+import { createRobotPacket, setButtonBit } from '@/utils/robotPackets';
 
 export default function IssModel() {
     const [sliderValue, setSliderValue] = useState(0);
@@ -31,10 +32,12 @@ export default function IssModel() {
         setAngle(sliderValue);
         if (isConnected) {
             // Send the angle as a byte array (0-360 mapped to 0-255)
-            const byteValue = Math.round((sliderValue / 360) * 255);
-            console.log("Sending byte value:", byteValue);
-            console.log([byteValue]);
-            sendPacket([1,127,127,127,127,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
+            const packet = createRobotPacket({ 
+                angles: { angle0: sliderValue },
+                buttons: { byte0: 1 } 
+                });
+            sendPacket(packet);
+            console.log(packet);
         }
     };
 
@@ -62,7 +65,16 @@ export default function IssModel() {
             onChange = {(e) => setSliderValue(Number(e.target.value))} 
             value = {sliderValue}/>
             <button type="submit" className="btn btn-primary">Set Angle</button>
-            <button type="button" className="btn btn-primary" onClick={() => {setSliderValue(0); setAngle(0);}}>Reset</button>
+            <button type="button" className="btn btn-primary" onClick={() => {
+                setSliderValue(0); 
+                setAngle(0);
+                const packet = createRobotPacket({ 
+                    angles: { angle0: 0 },
+                    buttons: { byte0: 2 } 
+                });
+                sendPacket(packet);
+                console.log(packet);
+            }}>Reset</button>
 
             </form>
         </div>

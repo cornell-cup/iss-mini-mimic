@@ -13,20 +13,20 @@ export default function SimpleRobotControls() {
   const moveRobot = (direction: 'forward' | 'backward' | 'left' | 'right' | 'stop') => {
     if (!isConnected) return;
     
-    let axisValues = { axis0: 127, axis1: 127, axis2: 127, axis3: 127 };
+    let axisValues = { angle0: 0, angle1: 0, angle2: 0, angle3: 0};
     
     switch (direction) {
       case 'forward':
-        axisValues.axis1 = 0; // Full forward
+        axisValues.angle1 = 90; // Full forward
         break;
       case 'backward':
-        axisValues.axis1 = 255; // Full backward
+        axisValues.angle1 = 180; // Full backward
         break;
       case 'left':
-        axisValues.axis0 = 0; // Full left
+        axisValues.angle0 = 270; // Full left
         break;
       case 'right':
-        axisValues.axis0 = 255; // Full right
+        axisValues.angle0 = 360; // Full right
         break;
       case 'stop':
       default:
@@ -35,8 +35,8 @@ export default function SimpleRobotControls() {
     }
     
     const packet = createRobotPacket({ 
-      axes: axisValues,
-      buttons: { byte0: buttonStates }
+      angles: axisValues,
+      buttons: { byte0: 1 } 
     });
     console.log("Sending packet:", packet);
     sendPacket(packet);
