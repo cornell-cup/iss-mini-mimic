@@ -1,0 +1,140 @@
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.directionPad {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.middleRow {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+.directionPad button {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  background-color: #0070f3;
+  color: white;
+  transition: all 0.2s ease;
+}
+
+.directionPad button:hover:not(:disabled) {
+  background-color: #0051a2;
+  transform: scale(1.05);
+}
+
+.directionPad button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.directionPad button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.directionPad button:nth-child(1) {
+  /* Forward button */
+  border-radius: 8px 8px 0 0;
+}
+
+.directionPad button:last-child {
+  /* Backward button */
+  border-radius: 0 0 8px 8px;
+}
+
+.middleRow button:first-child {
+  /* Left button */
+  border-radius: 8px 0 0 8px;
+}
+
+.middleRow button:last-child {
+  /* Right button */
+  border-radius: 0 8px 8px 0;
+}
+
+.middleRow button:nth-child(2) {
+  /* Stop button */
+  background-color: #f44336;
+}
+
+.middleRow button:nth-child(2):hover:not(:disabled) {
+  background-color: #d32f2f;
+}
+
+.buttonControls {
+  margin-top: 20px;
+}
+
+.buttonControls h3 {
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.buttonGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.buttonGrid button {
+  padding: 15px 10px;
+  border-radius: 6px;
+  border: none;
+  background-color: #6c757d;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.buttonGrid button:hover:not(:disabled) {
+  background-color: #5a6268;
+}
+
+.buttonGrid button.active {
+  background-color: #4dae50;
+}
+
+.buttonGrid button.active:hover:not(:disabled) {
+  background-color: #3d8c40;
+}
+
+.buttonGrid button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .controls {
+    padding: 15px;
+  }
+  
+  .directionPad button {
+    width: 70px;
+    height: 70px;
+    font-size: 12px;
+  }
+  
+  .buttonGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

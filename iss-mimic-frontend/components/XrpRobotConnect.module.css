@@ -1,0 +1,53 @@
+.xrpContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 5px;
+  background-color: #f5f5f5;
+}
+
+.connectButton {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  background-color: #0070f3;
+  color: white;
+  transition: background-color 0.3s;
+}
+
+.connectButton:hover {
+  background-color: #0051a2;
+}
+
+.connectButton.connected {
+  background-color: #4dae50;
+}
+
+.connectButton:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.statusDisplay {
+  padding: 8px 12px;
+  border-radius: 4px;
+  min-width: 120px;
+  text-align: center;
+  color: white;
+  font-weight: 500;
+}
+
+.telemetryDisplay {
+  font-family: monospace;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background-color: #333;
+  color: #4dae50;
+  font-weight: bold;
+  min-width: 80px;
+  text-align: center;
+}
