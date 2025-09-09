@@ -4,6 +4,7 @@ import "./globals.css";
 import Script from "next/script";
 import Navbar from "@/components/Navbar";
 import { TelemetryProvider } from "@/components/TelemetryContext";
+import { BluetoothProvider } from "@/contexts/BluetoothContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,10 +31,12 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable}`}
       >
+        <BluetoothProvider>
         <TelemetryProvider>
           <Navbar />
           {children}
         </TelemetryProvider>
+        </BluetoothProvider>
       </body>
     </html>
   );

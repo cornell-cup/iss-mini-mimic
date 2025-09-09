@@ -5,6 +5,7 @@ import { OrbitControls, Sky, Stars } from '@react-three/drei';
 import SolarPanel from '@/components/SolarPanel';
 import TelemetryDisplay from '@/components/TelemetryDisplay';
 import { useTelemetry, TELEMETRY_ITEMS } from '@/components/TelemetryContext';
+import BluetoothConnectionInfo from '@/components/BluetoothConnectionInfo';
 
 export default function IssModel() {
     const { telemetryItems } = useTelemetry();
@@ -12,45 +13,17 @@ export default function IssModel() {
 
     return (
     <div className="position-relative">
-        {/* Telemetry overlay 
-        <div className="position-absolute top-0 end-0 p-3 bg-dark bg-opacity-75 text-white m-3 rounded shadow-sm" style={{ zIndex: 10, maxWidth: '300px' }}>
-            <h5 className="mb-3 fw-bold">ISS Telemetry</h5>
-            <div className="d-flex flex-column gap-2">
-                <div className="d-flex justify-content-between">
-                    <span>Temperature:</span>
-                    <TelemetryDisplay 
-                        itemId="USLAB000018" 
-                        showLabel={false} 
-                        className="fw-bold"
-                    />
-                </div>
-                <div className="d-flex justify-content-between">
-                    <span>Pressure:</span>
-                    <TelemetryDisplay 
-                        itemId="USLAB000024" 
-                        showLabel={false} 
-                        className="fw-bold"
-                    />
-                </div>
-                <div className="d-flex justify-content-between">
-                    <span>O2 Pressure:</span>
-                    <TelemetryDisplay 
-                        itemId="NODE3000002" 
-                        showLabel={false} 
-                        className="fw-bold"
-                    />
-                </div>
-                <div className="d-flex justify-content-between">
-                    <span>CO2 Pressure:</span>
-                    <TelemetryDisplay 
-                        itemId="NODE3000003" 
-                        showLabel={false} 
-                        className="fw-bold"
-                    />
-                </div>
-            </div>
+        {/* Bluetooth Connection and Info */}
+        <div className="position-absolute top-0 start-0 p-3 bg-dark bg-opacity-75 text-white m-3 rounded shadow-sm" style={{ zIndex: 10, maxWidth: '500px' }}>
+            <BluetoothConnectionInfo />
         </div>
-        */}
+
+
+        <div className="position-absolute top-0 end-0 p-3 bg-dark bg-opacity-75 text-white m-3 rounded shadow-sm" style={{ zIndex: 10, maxWidth: '300px' }}>
+            <h5 className="mb-3 fw-bold">Telemetry Info</h5>
+            <TelemetryDisplay itemId="S0000004" className="d-block mb-2" />
+        </div>
+        
 
         {/* 3D Canvas */}
         <div style={{ height: '100vh', width: '100vw' }}>

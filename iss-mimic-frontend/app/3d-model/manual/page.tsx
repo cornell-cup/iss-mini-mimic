@@ -4,6 +4,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Sky, Stars } from '@react-three/drei';
 import SolarPanel from '@/components/SolarPanel';
 import React, {useState, ChangeEvent, FormEvent} from 'react';
+import BluetoothConnectionInfo from '@/components/BluetoothConnectionInfo';
 
 export default function IssModel() {
     const [sliderValue, setSliderValue] = useState(0);
@@ -20,6 +21,11 @@ export default function IssModel() {
 
     return (
     <div className="position-relative">
+        {/* Bluetooth Button and Info */}
+        <div className="position-absolute top-0 start-0 p-3 bg-dark bg-opacity-75 text-white m-3 rounded shadow-sm" style={{ zIndex: 10, maxWidth: '500px' }}>
+            <BluetoothConnectionInfo />
+        </div>
+
         {/* Telemetry overlay */}
         <div className="position-absolute top-0 end-0 p-3 bg-dark bg-opacity-75 text-white m-3 rounded shadow-sm" style={{ zIndex: 10, maxWidth: '300px' }}>
             <h5 className="mb-3 fw-bold">Angle for Solar Panels</h5>
@@ -37,7 +43,7 @@ export default function IssModel() {
             onChange = {(e) => setSliderValue(Number(e.target.value))} 
             value = {sliderValue}/>
             <button type="submit" className="btn btn-primary">Set Angle</button>
-            <button type="button" className="btn btn-primary" onClick={() => {setSliderValue(0); setAngle(0);}}>0</button>
+            <button type="button" className="btn btn-primary" onClick={() => {setSliderValue(0); setAngle(0);}}>Reset</button>
 
             </form>
         </div>
