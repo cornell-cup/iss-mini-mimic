@@ -44,6 +44,11 @@ export default function Navbar() {
               </Link>
             </li>
             <li className="nav-item">
+              <Link href="/about" className={`nav-link ${pathname === '/about' ? 'active' : ''}`}>
+                About
+              </Link>
+            </li>
+            <li className="nav-item">
               <Link href="https://github.com/David-Fuq/Cornell-ISS-Mimic-Mini.git" className="nav-link" target="_blank">
                 Github Repo
               </Link>

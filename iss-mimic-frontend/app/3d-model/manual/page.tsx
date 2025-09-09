@@ -5,10 +5,22 @@ import { OrbitControls, Sky, Stars } from '@react-three/drei';
 import SolarPanel from '@/components/SolarPanel';
 import React, {useState, ChangeEvent, FormEvent} from 'react';
 import BluetoothConnectionInfo from '@/components/BluetoothConnectionInfo';
+import { useBluetooth } from '@/contexts/BluetoothContext';
 
 export default function IssModel() {
     const [sliderValue, setSliderValue] = useState(0);
     const [angle, setAngle] = useState(0);
+
+    const { 
+        isConnected,
+        connecting,
+        connectionStatus,
+        statusColor,
+        telemetryData,
+        connectToDevice,
+        disconnectFromDevice,
+        sendPacket,
+    } = useBluetooth();
 
     const handleSliderChange = (event: ChangeEvent<HTMLInputElement>) => {
         setSliderValue(Number(event.target.value));
@@ -17,6 +29,13 @@ export default function IssModel() {
     const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         setAngle(sliderValue);
+        if (isConnected) {
+            // Send the angle as a byte array (0-360 mapped to 0-255)
+            const byteValue = Math.round((sliderValue / 360) * 255);
+            console.log("Sending byte value:", byteValue);
+            console.log([byteValue]);
+            sendPacket([1,127,127,127,127,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]);
+        }
     };
 
     return (

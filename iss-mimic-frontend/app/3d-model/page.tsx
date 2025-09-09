@@ -7,6 +7,7 @@ import TelemetryDisplay from '@/components/TelemetryDisplay';
 import { useTelemetry, TELEMETRY_ITEMS } from '@/components/TelemetryContext';
 import BluetoothConnectionInfo from '@/components/BluetoothConnectionInfo';
 
+
 export default function IssModel() {
     const { telemetryItems } = useTelemetry();
     const telemetry = telemetryItems["S0000004"];
