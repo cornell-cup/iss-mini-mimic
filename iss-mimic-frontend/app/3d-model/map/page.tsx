@@ -7,65 +7,26 @@ import React, {useState, ChangeEvent, FormEvent} from 'react';
 import BluetoothConnectionInfo from '@/components/BluetoothConnectionInfo';
 import { useBluetooth } from '@/contexts/BluetoothContext';
 import { createRobotPacket } from '@/utils/robotPackets';
+import { Room } from '@/components/Room';
 
-// Room component to create walls, floor and ceiling
-function Room() {
-  return (
-    <group>
-      {/* Floor */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -3, 0]}>
-        <planeGeometry args={[20, 20]} />
-        <meshStandardMaterial color="#8B7D6B" />
-      </mesh>
-      
-      {/* Ceiling */}
-      <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 7, 0]}>
-        <planeGeometry args={[20, 20]} />
-        <meshStandardMaterial color="#F5F5F5" />
-      </mesh>
-      
-      {/* Back wall */}
-      <mesh position={[0, 2, -10]}>
-        <planeGeometry args={[20, 10]} />
-        <meshStandardMaterial color="#E8E8E8" />
-      </mesh>
-      
-      {/* Front wall */}
-      <mesh position={[0, 2, 10]} rotation={[0, Math.PI, 0]}>
-        <planeGeometry args={[20, 10]} />
-        <meshStandardMaterial color="#E8E8E8" />
-      </mesh>
-      
-      {/* Left wall */}
-      <mesh position={[-10, 2, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <planeGeometry args={[20, 10]} />
-        <meshStandardMaterial color="#D3D3D3" />
-      </mesh>
-      
-      {/* Right wall */}
-      <mesh position={[10, 2, 0]} rotation={[0, -Math.PI / 2, 0]}>
-        <planeGeometry args={[20, 10]} />
-        <meshStandardMaterial color="#D3D3D3" />
-      </mesh>
-    </group>
-  );
-}
+
 
 export default function IssModel() {
     const [sliderValue, setSliderValue] = useState(0);
     const [angle, setAngle] = useState(0);
+
+    const width = 2058/3;
+    const depth = 1036/3;
+    const min_x = -width/2 + 1;
+    const max_x = width/2 - 1;
+    const min_y = -depth/2 + 1;
+    const max_y = depth/2 - 1;
     
     // Sphere position control
-    const [spherePosition, setSpherePosition] = useState({ x: 0, y: 0, z: 0 });
+    const [spherePosition, setSpherePosition] = useState({ x: 0, y: 0, z: 10 });
     
     const { 
         isConnected,
-        connecting,
-        connectionStatus,
-        statusColor,
-        telemetryData,
-        connectToDevice,
-        disconnectFromDevice,
         sendPacket,
     } = useBluetooth();
 
@@ -143,15 +104,15 @@ export default function IssModel() {
             </form>
             
             {/* Sphere position controls */}
-            <h5 className="mb-2 fw-bold">Sphere Position</h5>
+            <h5 className="mb-2 fw-bold">ISS Position</h5>
             <div className="mb-2">
                 <label htmlFor="x-position">X Position:</label>
                 <input
                     type="range"
                     className="form-range"
                     id="x-position"
-                    min="-5"
-                    max="5"
+                    min={min_x}
+                    max={max_x}
                     step="0.1"
                     value={spherePosition.x}
                     onChange={(e) => handlePositionChange('x', Number(e.target.value))}
@@ -165,8 +126,8 @@ export default function IssModel() {
                     type="range"
                     className="form-range"
                     id="y-position"
-                    min="-3"
-                    max="5"
+                    min={min_y}
+                    max={max_y}
                     step="0.1"
                     value={spherePosition.y}
                     onChange={(e) => handlePositionChange('y', Number(e.target.value))}
@@ -188,13 +149,22 @@ export default function IssModel() {
                 />
                 <span>{spherePosition.z.toFixed(1)}</span>
             </div>
+            <button 
+                type="button" 
+                className="btn btn-secondary" 
+                onClick={() => {
+                    setSpherePosition({ x: 0, y: 0, z: 10 });
+                }}
+            >
+                Reset
+            </button>
         </div>
         
         {/* 3D Canvas */}
         <div style={{ height: '100vh', width: '100vw' }}>
-            <Canvas camera={{ position: [5, 5, 10], fov: 50 }}>
+            <Canvas camera={{ position: [10, 450, 10], fov: 50 }}>
                 {/* Room appropriate lighting */}
-                <ambientLight intensity={0.4} />
+                <ambientLight intensity={1.2} />
                 <pointLight position={[0, 6, 0]} intensity={0.8} />
                 <pointLight position={[5, 4, -2]} intensity={0.5} color="#fff6e5" />
                 <pointLight position={[-5, 4, 2]} intensity={0.5} color="#e5f2ff" />
@@ -204,12 +174,11 @@ export default function IssModel() {
                 
                 {/* ISS Sphere with controllable position */}
                 <mesh 
-                    position={[spherePosition.x, spherePosition.y, spherePosition.z]}
+                    position={[spherePosition.x, spherePosition.z, -spherePosition.y]}
                 >
                     <sphereGeometry args={[1, 32, 32]} />
                     <meshStandardMaterial color="blue" />
                     <SolarPanel position={[2, 0, 0]} rotation={[0, Math.PI / 2, 0]} color="green"/>
-                    <SolarPanel position={[5, 0, 1]} rotation={[0, Math.PI / 2, 0]} color="blue"/>
                     <SolarPanel position={[4.5, 0, 0]} rotation={[0, Math.PI / 2, 0]} color="green"/>
                     <SolarPanel 
                         position={[-2, 0, 0]} 
@@ -223,7 +192,11 @@ export default function IssModel() {
                     />   
                 </mesh> 
                 
-                <OrbitControls />
+                <OrbitControls 
+                    target={[0, 0, 0]}
+                    minAzimuthAngle={-Math.PI / 20} 
+                    maxAzimuthAngle={Math.PI / 700}
+                />
             </Canvas>
         </div>
     </div>
