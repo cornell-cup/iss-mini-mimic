@@ -29,8 +29,8 @@ interface TelemetryContextType {
 // List of telemetry items to monitor
 export const TELEMETRY_ITEMS = [
   { id: "S0000004", name: "Port Solar Alpha Rotary Joint (SARJ) Angle Position [°]" },
-  /*{ id: "S0000005", name: "ADCO Attitude TLM Flag" },
-  { id: "S0000018", name: "CMG 1 Active" },
+  { id: "NODE3000005", name: "Urine Tank [%]" },
+  /*{ id: "S0000018", name: "CMG 1 Active" },
   { id: "S0000019", name: "CMG 2 Active" },
   { id: "S0000020", name: "CMG 3 Active" },
   { id: "S0000021", name: "CMG 4 Active" },

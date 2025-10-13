@@ -1,6 +1,6 @@
 'use client';
 
-import { useTelemetry } from './TelemetryContext';
+import { useTelemetry } from '../contexts/TelemetryContext';
 
 // Simple component to display telemetry data in other pages
 export default function TelemetryDisplay({ itemId, showLabel = true, className = "" }: { 

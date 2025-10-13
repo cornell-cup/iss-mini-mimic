@@ -3,8 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import Navbar from "@/components/Navbar";
-import { TelemetryProvider } from "@/components/TelemetryContext";
+import { TelemetryProvider } from "@/contexts/TelemetryContext";
 import { BluetoothProvider } from "@/contexts/BluetoothContext";
+import { IssPositionProvider } from "@/contexts/IssPositionContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,7 +19,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "ISS Mimic",
-  description: "Real-time data from the International Space Station in the ISS Mimic",
+  description: "Real-time data from the International Space Station in the ISS Micro Mimic",
 };
 
 export default function RootLayout({
@@ -33,8 +34,10 @@ export default function RootLayout({
       >
         <BluetoothProvider>
         <TelemetryProvider>
+        <IssPositionProvider>
           <Navbar />
           {children}
+        </IssPositionProvider>
         </TelemetryProvider>
         </BluetoothProvider>
       </body>
