@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { getLatestIssPosition } from '@/utils/iss_position_service';
+//import { getLatestIssPosition } from '@/utils/iss_position_service';
 
 interface IssPosition {
   lat: number;
@@ -27,14 +27,16 @@ export function IssPositionProvider({ children }: { children: React.ReactNode })
     setIsLoading(true);
     setError(null);
     try {
-      const position = await getLatestIssPosition();
-      setPosition(position);
-    } catch (err) {
-      console.error('Failed to fetch ISS position:', err);
-      setError(err instanceof Error ? err.message : 'Unknown error');
-    } finally {
-      setIsLoading(false);
-    }
+    const response = await fetch('/api/iss-position');
+    if (!response.ok) throw new Error('Failed to fetch ISS position');
+    const data = await response.json();
+    setPosition(data.position);
+  } catch (err) {
+    console.error('Failed to fetch ISS position:', err);
+    setError(err instanceof Error ? err.message : 'Unknown error');
+  } finally {
+    setIsLoading(false);
+  }
   };
   
   useEffect(() => {
