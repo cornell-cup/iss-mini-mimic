@@ -76,47 +76,76 @@ export default function IssModel() {
     const handleSubmitAlpha = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
         
+        // Create a copy of the current alpha angles
+        let updatedAlphaAngles = {...groupAlphaAngles};
+        
         if (selectedAlphaGroup === "all") {
             // Update all groups
-            setGroupAlphaAngles({
+            updatedAlphaAngles = {
                 group1: alphaSliderValue,
                 group2: alphaSliderValue
-            });
+            };
         } else {
             // Update only the selected group
-            setGroupAlphaAngles(prev => ({
-                ...prev,
-                [selectedAlphaGroup]: alphaSliderValue
-            }));
+            updatedAlphaAngles[selectedAlphaGroup as keyof typeof updatedAlphaAngles] = alphaSliderValue;
         }
         
-        // Use setTimeout to ensure state is updated before sending
-        setTimeout(() => {
-            sendAllAngles();
-        }, 5);
+        // Update state
+        setGroupAlphaAngles(updatedAlphaAngles);
+        
+        // Send packet with the updated values immediately
+        if (isConnected) {
+            const packet = createRobotPacket({ 
+                angles: { 
+                    angle0: panelBetaAngles.panel1,
+                    angle1: panelBetaAngles.panel2,
+                    angle2: panelBetaAngles.panel3,
+                    angle3: panelBetaAngles.panel4,
+                    angle4: updatedAlphaAngles.group1,
+                    angle5: updatedAlphaAngles.group2
+                },
+                buttons: { byte0: 1 } 
+            });
+            sendPacket(packet);
+            console.log("Sending alpha update:", packet);
+        }
     };
     
     const handleResetAlpha = () => {
+        // Create a copy of the current alpha angles
+        let updatedAlphaAngles = {...groupAlphaAngles};
+        
         if (selectedAlphaGroup === "all") {
             // Reset all groups
-            setGroupAlphaAngles({
+            updatedAlphaAngles = {
                 group1: 0,
                 group2: 0
-            });
+            };
         } else {
             // Reset only the selected group
-            setGroupAlphaAngles(prev => ({
-                ...prev,
-                [selectedAlphaGroup]: 0
-            }));
+            updatedAlphaAngles[selectedAlphaGroup as keyof typeof updatedAlphaAngles] = 0;
         }
         
+        // Update state
+        setGroupAlphaAngles(updatedAlphaAngles);
         setAlphaSliderValue(0);
         
-        // Use setTimeout to ensure state is updated before sending
-        setTimeout(() => {
-            sendAllAngles();
-        }, 5);
+        // Send packet with the updated values immediately
+        if (isConnected) {
+            const packet = createRobotPacket({ 
+                angles: { 
+                    angle0: panelBetaAngles.panel1,
+                    angle1: panelBetaAngles.panel2,
+                    angle2: panelBetaAngles.panel3,
+                    angle3: panelBetaAngles.panel4,
+                    angle4: updatedAlphaAngles.group1,
+                    angle5: updatedAlphaAngles.group2
+                },
+                buttons: { byte0: 1 } 
+            });
+            sendPacket(packet);
+            console.log("Reset alpha angles:", packet);
+        }
     };
 
     // Beta handlers
@@ -138,52 +167,81 @@ export default function IssModel() {
 
     const handleSubmitBeta = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-    
+        
+        // Create a copy of the current beta angles
+        let updatedBetaAngles = {...panelBetaAngles};
+        
         if (selectedPanelBeta === "all") {
-            // Update all panels
-            setPanelBetaAngles({
+            // Update all panels in our local copy
+            updatedBetaAngles = {
                 panel1: betaSliderValue,
                 panel2: betaSliderValue,
                 panel3: betaSliderValue,
                 panel4: betaSliderValue
-            });
+            };
         } else {
-            // Update only the selected panel
-            setPanelBetaAngles(prev => ({
-                ...prev,
-                [selectedPanelBeta]: betaSliderValue
-            }));
+            // Update only the selected panel in our local copy
+            updatedBetaAngles[selectedPanelBeta as keyof typeof updatedBetaAngles] = betaSliderValue;
         }
         
-        // Use setTimeout to ensure state is updated before sending
-        setTimeout(() => {
-            sendAllAngles();
-        }, 5);
+        // Update state
+        setPanelBetaAngles(updatedBetaAngles);
+        
+        // Send packet with the updated values immediately
+        if (isConnected) {
+            const packet = createRobotPacket({ 
+                angles: { 
+                    angle0: updatedBetaAngles.panel1,
+                    angle1: updatedBetaAngles.panel2,
+                    angle2: updatedBetaAngles.panel3,
+                    angle3: updatedBetaAngles.panel4,
+                    angle4: groupAlphaAngles.group1,
+                    angle5: groupAlphaAngles.group2
+                },
+                buttons: { byte0: 1 } 
+            });
+            sendPacket(packet);
+            console.log("Sending beta update:", packet);
+        }
     };
     
     const handleResetBeta = () => {
+        // Create a copy of the current beta angles
+        let updatedBetaAngles = {...panelBetaAngles};
+        
         if (selectedPanelBeta === "all") {
             // Reset all panels
-            setPanelBetaAngles({
+            updatedBetaAngles = {
                 panel1: 0,
                 panel2: 0,
                 panel3: 0,
                 panel4: 0
-            });
+            };
         } else {
             // Reset only the selected panel
-            setPanelBetaAngles(prev => ({
-                ...prev,
-                [selectedPanelBeta]: 0
-            }));
+            updatedBetaAngles[selectedPanelBeta as keyof typeof updatedBetaAngles] = 0;
         }
         
+        // Update state
+        setPanelBetaAngles(updatedBetaAngles);
         setBetaSliderValue(0);
         
-        // Use setTimeout to ensure state is updated before sending
-        setTimeout(() => {
-            sendAllAngles();
-        }, 5);
+        // Send packet with the updated values immediately
+        if (isConnected) {
+            const packet = createRobotPacket({ 
+                angles: { 
+                    angle0: updatedBetaAngles.panel1,
+                    angle1: updatedBetaAngles.panel2,
+                    angle2: updatedBetaAngles.panel3,
+                    angle3: updatedBetaAngles.panel4,
+                    angle4: groupAlphaAngles.group1,
+                    angle5: groupAlphaAngles.group2
+                },
+                buttons: { byte0: 1 } 
+            });
+            sendPacket(packet);
+            console.log("Reset beta angles:", packet);
+        }
     };
 
     return (

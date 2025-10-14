@@ -9,7 +9,7 @@ from pestolink import PestoLinkAgent
 
 #Choose the name your robot shows up as in the Bluetooth paring menu
 #Name should be 8 characters max!
-robot_name = "XRProbot"
+robot_name = "IssMimic"
 
 # Create an instance of the PestoLinkAgent class
 pestolink = PestoLinkAgent(robot_name)
