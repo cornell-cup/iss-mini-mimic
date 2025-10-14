@@ -144,18 +144,27 @@ class PestoLinkAgent:
         _raw_byte_list = [byte for byte in value]
         if (_raw_byte_list[0] == 0x01):
             self._byte_list = _raw_byte_list
+        elif (_raw_byte_list[0] == 0x02):
+            self._byte_list = _raw_byte_list
         else:
             self._byte_list = [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     
     #GETS THE ANGLES FROM 0 TO 360. Currently 2 bytes per angle, 4 angles total
     def get_angle(self, angle_num):
-        if angle_num < 0 or angle_num > 3 or self._byte_list == None:  # Assuming 4 angles
+        if angle_num < 0 or angle_num > 5 or self._byte_list == None:  # Now support 6 angles (0-5)
             return 0
         else:
             # Calculate index for this angle (each angle takes 2 bytes)
-            base_idx = 1 + (angle_num * 2)
-            # Combine low and high bytes
-            return self._byte_list[base_idx] | (self._byte_list[base_idx + 1] << 8)
+            if self._byte_list[0] == 0x02:  # Extended protocol (v2)
+                base_idx = 1 + (angle_num * 2)
+                # Combine low and high bytes
+                return self._byte_list[base_idx] | (self._byte_list[base_idx + 1] << 8)
+            else:  # Original protocol (v1)
+                if angle_num <= 3:  # Only angles 0-3 supported in v1
+                    base_idx = 1 + (angle_num * 2)
+                    return self._byte_list[base_idx] | (self._byte_list[base_idx + 1] << 8)
+                else:
+                    return 0  # No data for angles 4-5 in original protocol
         
     def get_raw_axis(self, axis_num):
         if axis_num < 0 or axis_num > 3 or self._byte_list == None:
@@ -175,7 +184,11 @@ class PestoLinkAgent:
         if self._byte_list == None:
             return False
         
-        raw_buttons = (self._byte_list[10] << 8) + self._byte_list[9]
+        if self._byte_list[0] == 0x02:  # Extended protocol
+            raw_buttons = (self._byte_list[14] << 8) + self._byte_list[13]
+        else:  # Original protocol
+            raw_buttons = (self._byte_list[10] << 8) + self._byte_list[9]
+            
         if ((raw_buttons >> (button_num)) & 0x01):
             return True
         else:

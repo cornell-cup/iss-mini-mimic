@@ -29,6 +29,24 @@ while True:
             else:
                 servo_one.set_angle(360-pestolink.get_angle(0))
 
+        if pestolink.get_angle(1) >= 0 and pestolink.get_angle(1) <= 360:
+            if pestolink.get_angle(1) <= 180:
+                servo_two.set_angle(pestolink.get_angle(1))
+            else:
+                servo_two.set_angle(360-pestolink.get_angle(1))
+
+        if pestolink.get_angle(2) >= 0 and pestolink.get_angle(2) <= 360:
+            if pestolink.get_angle(2) <= 180:
+                servo_three.set_angle(pestolink.get_angle(2))
+            else:
+                servo_three.set_angle(360-pestolink.get_angle(2))
+
+        if pestolink.get_angle(4) >= 0 and pestolink.get_angle(4) <= 360:
+            if pestolink.get_angle(4) <= 180:
+                servo_four.set_angle(pestolink.get_angle(4))
+            else:
+                servo_four.set_angle(360-pestolink.get_angle(4))
+
         
         batteryVoltage = (ADC(Pin("BOARD_VIN_MEASURE")).read_u16())/(1024*64/14)
         pestolink.telemetryPrintBatteryVoltage(batteryVoltage)

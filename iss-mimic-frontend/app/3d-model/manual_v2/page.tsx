@@ -34,14 +34,27 @@ export default function IssModel() {
 
     const { 
         isConnected,
-        connecting,
-        connectionStatus,
-        statusColor,
-        telemetryData,
-        connectToDevice,
-        disconnectFromDevice,
         sendPacket,
     } = useBluetooth();
+
+    //Send all angles functions
+    const sendAllAngles = () => {
+        if (isConnected) {
+            const packet = createRobotPacket({ 
+                angles: { 
+                    angle0: panelBetaAngles.panel1,  // Panel 1 beta
+                    angle1: panelBetaAngles.panel2,  // Panel 2 beta
+                    angle2: panelBetaAngles.panel3,  // Panel 3 beta
+                    angle3: panelBetaAngles.panel4,  // Panel 4 beta
+                    angle4: groupAlphaAngles.group1, // Group 1 alpha
+                    angle5: groupAlphaAngles.group2  // Group 2 alpha
+                },
+                buttons: { byte0: 1 } 
+            });
+            sendPacket(packet);
+            console.log("All angles packet:", packet);
+        }
+    };
 
     // Alpha handlers
     const handleAlphaSliderChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -77,14 +90,10 @@ export default function IssModel() {
             }));
         }
         
-        if (isConnected) {
-            const packet = createRobotPacket({ 
-                angles: { angle0: alphaSliderValue },
-                buttons: { byte0: 1 } 
-            });
-            sendPacket(packet);
-            console.log(packet);
-        }
+        // Use setTimeout to ensure state is updated before sending
+        setTimeout(() => {
+            sendAllAngles();
+        }, 5);
     };
     
     const handleResetAlpha = () => {
@@ -104,14 +113,10 @@ export default function IssModel() {
         
         setAlphaSliderValue(0);
         
-        if (isConnected) {
-            const packet = createRobotPacket({ 
-                angles: { angle0: 0 },
-                buttons: { byte0: 2 } 
-            });
-            sendPacket(packet);
-            console.log(packet);
-        }
+        // Use setTimeout to ensure state is updated before sending
+        setTimeout(() => {
+            sendAllAngles();
+        }, 5);
     };
 
     // Beta handlers
@@ -133,7 +138,7 @@ export default function IssModel() {
 
     const handleSubmitBeta = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        
+    
         if (selectedPanelBeta === "all") {
             // Update all panels
             setPanelBetaAngles({
@@ -150,14 +155,10 @@ export default function IssModel() {
             }));
         }
         
-        if (isConnected) {
-            const packet = createRobotPacket({ 
-                angles: { angle0: betaSliderValue },
-                buttons: { byte0: 1 } 
-            });
-            sendPacket(packet);
-            console.log(packet);
-        }
+        // Use setTimeout to ensure state is updated before sending
+        setTimeout(() => {
+            sendAllAngles();
+        }, 5);
     };
     
     const handleResetBeta = () => {
@@ -179,14 +180,10 @@ export default function IssModel() {
         
         setBetaSliderValue(0);
         
-        if (isConnected) {
-            const packet = createRobotPacket({ 
-                angles: { angle0: 0 },
-                buttons: { byte0: 2 } 
-            });
-            sendPacket(packet);
-            console.log(packet);
-        }
+        // Use setTimeout to ensure state is updated before sending
+        setTimeout(() => {
+            sendAllAngles();
+        }, 5);
     };
 
     return (
