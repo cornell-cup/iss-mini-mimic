@@ -10,9 +10,15 @@ import { createRobotPacket, setButtonBit } from '@/utils/robotPackets';
 import SolarPanel2 from '@/components/SolarPanel_v2';
 
 export default function IssModel() {
-    // Alpha angle state - single value affecting all panels
+    // Alpha angle states - per group
+    const [selectedAlphaGroup, setSelectedAlphaGroup] = useState("all");
     const [alphaSliderValue, setAlphaSliderValue] = useState(0);
-    const [alphaAngle, setAlphaAngle] = useState(0);
+    
+    // Store alpha angles for each group
+    const [groupAlphaAngles, setGroupAlphaAngles] = useState({
+        group1: 0, // Red and Orange panels
+        group2: 0  // Green and Purple panels
+    });
     
     // Beta angle states - per panel
     const [selectedPanelBeta, setSelectedPanelBeta] = useState("all");
@@ -37,11 +43,78 @@ export default function IssModel() {
         sendPacket,
     } = useBluetooth();
 
-    // Handlers
+    // Alpha handlers
     const handleAlphaSliderChange = (event: ChangeEvent<HTMLInputElement>) => {
         setAlphaSliderValue(Number(event.target.value));
     };
 
+    const handleAlphaGroupSelection = (event: ChangeEvent<HTMLSelectElement>) => {
+        setSelectedAlphaGroup(event.target.value);
+        
+        // Update slider to show the selected group's current alpha angle
+        if (event.target.value !== "all") {
+            setAlphaSliderValue(groupAlphaAngles[event.target.value as keyof typeof groupAlphaAngles]);
+        } else {
+            // When "all" is selected, show 0 or some default value
+            setAlphaSliderValue(0);
+        }
+    };
+
+    const handleSubmitAlpha = (event: FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        
+        if (selectedAlphaGroup === "all") {
+            // Update all groups
+            setGroupAlphaAngles({
+                group1: alphaSliderValue,
+                group2: alphaSliderValue
+            });
+        } else {
+            // Update only the selected group
+            setGroupAlphaAngles(prev => ({
+                ...prev,
+                [selectedAlphaGroup]: alphaSliderValue
+            }));
+        }
+        
+        if (isConnected) {
+            const packet = createRobotPacket({ 
+                angles: { angle0: alphaSliderValue },
+                buttons: { byte0: 1 } 
+            });
+            sendPacket(packet);
+            console.log(packet);
+        }
+    };
+    
+    const handleResetAlpha = () => {
+        if (selectedAlphaGroup === "all") {
+            // Reset all groups
+            setGroupAlphaAngles({
+                group1: 0,
+                group2: 0
+            });
+        } else {
+            // Reset only the selected group
+            setGroupAlphaAngles(prev => ({
+                ...prev,
+                [selectedAlphaGroup]: 0
+            }));
+        }
+        
+        setAlphaSliderValue(0);
+        
+        if (isConnected) {
+            const packet = createRobotPacket({ 
+                angles: { angle0: 0 },
+                buttons: { byte0: 2 } 
+            });
+            sendPacket(packet);
+            console.log(packet);
+        }
+    };
+
+    // Beta handlers
     const handleBetaSliderChange = (event: ChangeEvent<HTMLInputElement>) => {
         setBetaSliderValue(Number(event.target.value));
     };
@@ -55,19 +128,6 @@ export default function IssModel() {
         } else {
             // When "all" is selected, show 0 or some default value
             setBetaSliderValue(0);
-        }
-    };
-
-    const handleSubmitAlpha = (event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setAlphaAngle(alphaSliderValue);
-        if (isConnected) {
-            const packet = createRobotPacket({ 
-                angles: { angle0: alphaSliderValue },
-                buttons: { byte0: 1 } 
-            });
-            sendPacket(packet);
-            console.log(packet);
         }
     };
 
@@ -140,6 +200,19 @@ export default function IssModel() {
         <div className="position-absolute top-0 end-0 p-3 bg-dark bg-opacity-75 text-white m-3 rounded shadow-sm" style={{ zIndex: 10, maxWidth: '300px' }}>
             <h5 className="mb-3 fw-bold">Alpha Angle for Solar Panels</h5>
             <form onSubmit={handleSubmitAlpha}>
+                <div className="mb-3">
+                    <label htmlFor="alpha-group-select" className="form-label">Select Group:</label>
+                    <select 
+                        id="alpha-group-select" 
+                        className="form-select"
+                        value={selectedAlphaGroup}
+                        onChange={handleAlphaGroupSelection}
+                    >
+                        <option value="all">All Groups</option>
+                        <option value="group1">Group 1 (Red and Orange)</option>
+                        <option value="group2">Group 2 (Green and Purple)</option>
+                    </select>
+                </div>
                 <label htmlFor="alpha-slider">Select a value:</label>
                 <input
                     type="range"
@@ -155,16 +228,13 @@ export default function IssModel() {
                     type="number"
                 />
                 <button type="submit" className="btn btn-primary">Set Alpha</button>
-                <button type="button" className="btn btn-primary" onClick={() => {
-                    setAlphaSliderValue(0); 
-                    setAlphaAngle(0);
-                    const packet = createRobotPacket({ 
-                        angles: { angle0: 0 },
-                        buttons: { byte0: 2 } 
-                    });
-                    sendPacket(packet);
-                    console.log(packet);
-                }}>Reset</button>
+                <button 
+                    type="button" 
+                    className="btn btn-primary"
+                    onClick={handleResetAlpha}
+                >
+                    Reset
+                </button>
             </form>
 
             <h5 className="mb-3 mt-3 fw-bold">Beta Angle for Solar Panels</h5>
@@ -227,25 +297,33 @@ export default function IssModel() {
                 <mesh>
                     <sphereGeometry args={[1, 32, 32]} />
                     <meshStandardMaterial color="blue" />
+                    {/* Group 2: Green Panel */}
                     <SolarPanel2 
-                    position={[2, 0, 0]} 
-                    rotation={[0, 0, panelBetaAngles.panel3 * (Math.PI/180)]} 
-                    color="green"/>
+                        position={[2, 0, 0]} 
+                        rotation={[groupAlphaAngles.group2 * (Math.PI/180), 0, panelBetaAngles.panel3 * (Math.PI/180)]} 
+                        color="green"
+                    />
 
+                    {/* Group 2: Purple Panel */}
                     <SolarPanel2 
-                    position={[4.5, 0, 0]} 
-                    rotation={[0, 0, panelBetaAngles.panel4 * (Math.PI/180)]} 
-                    color="purple"/>
+                        position={[4.5, 0, 0]} 
+                        rotation={[groupAlphaAngles.group2 * (Math.PI/180), 0, panelBetaAngles.panel4 * (Math.PI/180)]} 
+                        color="purple"
+                    />
 
+                    {/* Group 1: Orange Panel */}
                     <SolarPanel2 
-                    position={[-2, 0, 0]} 
-                    rotation={[0, 0, panelBetaAngles.panel2 * (Math.PI/180)]} 
-                    color="orange" />
+                        position={[-2, 0, 0]} 
+                        rotation={[groupAlphaAngles.group1 * (Math.PI/180), 0, panelBetaAngles.panel2 * (Math.PI/180)]} 
+                        color="orange" 
+                    />
 
+                    {/* Group 1: Red Panel */}
                     <SolarPanel2 
-                    position={[-4.5, 0, 0]} 
-                    rotation={[0, 0, panelBetaAngles.panel1 * (Math.PI/180)]} 
-                    color="red"/>
+                        position={[-4.5, 0, 0]} 
+                        rotation={[groupAlphaAngles.group1 * (Math.PI/180), 0, panelBetaAngles.panel1 * (Math.PI/180)]} 
+                        color="red"
+                    />
                 </mesh> 
                 <OrbitControls />
             </Canvas>
