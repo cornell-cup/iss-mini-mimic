@@ -7,11 +7,11 @@
  * @returns Uint8Array packet ready to send
  */
 export function createRobotPacket({
-  angles = { angle0: 0, angle1: 0, angle2: 0, angle3: 0 },
+  angles = { angle0: 0, angle1: 0, angle2: 0, angle3: 0, angle4: 0, angle5: 0 },
   buttons = { byte0: 0, byte1: 0 },
   keyboardKeys = []
 }: {
-  angles?: { angle0?: number; angle1?: number; angle2?: number; angle3?: number };
+  angles?: { angle0?: number; angle1?: number; angle2?: number; angle3?: number; angle4?: number; angle5?: number };
   buttons?: { byte0?: number; byte1?: number };
   keyboardKeys?: number[];
 } = {}): Uint8Array {
@@ -19,13 +19,15 @@ export function createRobotPacket({
   const packet = new Uint8Array(26).fill(0);
   
   // Set packet version
-  packet[0] = 0x01;
+  packet[0] = 0x02; // Updated version to indicate 6-angle format
   
   // Ensure angles are within valid range and convert to integers
   const angle0 = Math.min(360, Math.max(0, Math.floor(angles.angle0 ?? 0)));
   const angle1 = Math.min(360, Math.max(0, Math.floor(angles.angle1 ?? 0)));
   const angle2 = Math.min(360, Math.max(0, Math.floor(angles.angle2 ?? 0)));
   const angle3 = Math.min(360, Math.max(0, Math.floor(angles.angle3 ?? 0)));
+  const angle4 = Math.min(360, Math.max(0, Math.floor(angles.angle4 ?? 0)));
+  const angle5 = Math.min(360, Math.max(0, Math.floor(angles.angle5 ?? 0)));
   
   // Set angle values (each angle uses 2 bytes: low byte first, then high byte)
   packet[1] = angle0 & 0xFF;         // Angle 0 - low byte
@@ -36,14 +38,19 @@ export function createRobotPacket({
   packet[6] = (angle2 >> 8) & 0xFF;  // Angle 2 - high byte
   packet[7] = angle3 & 0xFF;         // Angle 3 - low byte
   packet[8] = (angle3 >> 8) & 0xFF;  // Angle 3 - high byte
+  packet[9] = angle4 & 0xFF;         // Group 1 - low byte
+  packet[10] = (angle4 >> 8) & 0xFF; // Group 1 - high byte
+  packet[11] = angle5 & 0xFF;        // Group 2 - low byte
+  packet[12] = (angle5 >> 8) & 0xFF; // Group 2 - high byte
+  
   
   // Set button states
-  packet[9] = buttons.byte0 !== undefined ? buttons.byte0 : 0;
-  packet[10] = buttons.byte1 !== undefined ? buttons.byte1 : 0;
+  packet[13] = buttons.byte0 !== undefined ? buttons.byte0 : 0;
+  packet[14] = buttons.byte1 !== undefined ? buttons.byte1 : 0;
   
   // Set keyboard keys (if any)
   for (let i = 0; i < Math.min(keyboardKeys.length, 15); i++) {
-    packet[11 + i] = keyboardKeys[i];
+    packet[15 + i] = keyboardKeys[i];
   }
   
   return packet;

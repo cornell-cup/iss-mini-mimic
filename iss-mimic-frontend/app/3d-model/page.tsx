@@ -4,7 +4,7 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Sky, Stars } from '@react-three/drei';
 import SolarPanel from '@/components/SolarPanel';
 import TelemetryDisplay from '@/components/TelemetryDisplay';
-import { useTelemetry, TELEMETRY_ITEMS } from '@/components/TelemetryContext';
+import { useTelemetry, TELEMETRY_ITEMS } from '@/contexts/TelemetryContext';
 import BluetoothConnectionInfo from '@/components/BluetoothConnectionInfo';
 import { useBluetooth } from '@/contexts/BluetoothContext';
 import { createRobotPacket, setButtonBit } from '@/utils/robotPackets';

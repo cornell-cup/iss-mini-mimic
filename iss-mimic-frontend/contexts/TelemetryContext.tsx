@@ -28,9 +28,18 @@ interface TelemetryContextType {
 
 // List of telemetry items to monitor
 export const TELEMETRY_ITEMS = [
-  { id: "S0000004", name: "ADCO State Vector TLM Flag" },
-  /*{ id: "S0000005", name: "ADCO Attitude TLM Flag" },
-  { id: "S0000018", name: "CMG 1 Active" },
+  {id: "S0000003", name: "Starboard Solar Alpha Rotary Joint (SARJ) Angle Position [°]"},
+  { id: "S0000004", name: "Port Solar Alpha Rotary Joint (SARJ) Angle Position [°]" },
+  //{ id: "NODE3000005", name: "Urine Tank [%]" },
+  { id: "P4000007", name: "BGA 1" },
+  //{ id: "P4000008", name: "BGA 2" },
+  { id: "P6000007", name: "BGA 3" },
+  //{ id: "P6000008", name: "BGA 4" },
+  { id: "S4000007", name: "BGA 5" },
+  //{ id: "S4000008", name: "BGA 6" },
+  { id: "S6000007", name: "BGA 7" },
+  //{ id: "S6000008", name: "BGA 8" },
+  /*{ id: "S0000018", name: "CMG 1 Active" },
   { id: "S0000019", name: "CMG 2 Active" },
   { id: "S0000020", name: "CMG 3 Active" },
   { id: "S0000021", name: "CMG 4 Active" },
@@ -136,8 +145,9 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
             setSignalClass("bg-success");
           }
         } else {
-          setSignalStatus("Signal Lost");
-          setSignalClass("bg-danger");
+          //Check, it was no signal before
+          setSignalStatus("Signal OK");
+          setSignalClass("bg-success");
         }
       }
     });

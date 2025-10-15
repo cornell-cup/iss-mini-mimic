@@ -43,6 +43,16 @@ export default function Navbar() {
                 3D Model (Manual)
               </Link>
             </li>
+            <li className="nav-item">
+              <Link href="/map/manual" className={`nav-link ${pathname === '/map/manual' ? 'active' : ''}`}>
+                Map (Manual)
+              </Link>
+            </li>
+            <li className="nav-item">
+              <Link href="/map" className={`nav-link ${pathname === '/map' ? 'active' : ''}`}>
+                Map (Live)
+              </Link>
+            </li>
             {/*
             <li className="nav-item">
               <Link href="/about" className={`nav-link ${pathname === '/about' ? 'active' : ''}`}>
