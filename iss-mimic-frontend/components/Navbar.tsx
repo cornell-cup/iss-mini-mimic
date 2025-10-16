@@ -12,7 +12,7 @@ export default function Navbar() {
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark mb-4">
       <div className="container">
         <Link href="/" className="navbar-brand">
-          ISS Mimic
+          ISS Micro Mimic
         </Link>
         
         <button 
@@ -34,7 +34,7 @@ export default function Navbar() {
               </Link>
             </li>
             <li className="nav-item">
-              <Link href="/3d-model/live_v2" className={`nav-link ${pathname === '/3d-model/live_v2' ? 'active' : ''}`}>
+              <Link href="/3d-model/live_v3" className={`nav-link ${pathname === '/3d-model/live_v3' ? 'active' : ''}`}>
                 3D Model (Live)
               </Link>
             </li>
@@ -67,7 +67,7 @@ export default function Navbar() {
             </li>
           </ul>
           <span className="navbar-text">
-            International Space Station Live Data
+            GUI created by <a href="https://www.linkedin.com/in/david-fuquen/" target="_blank" rel="noopener noreferrer">David Fuquen</a>
           </span>
         </div>
       </div>
