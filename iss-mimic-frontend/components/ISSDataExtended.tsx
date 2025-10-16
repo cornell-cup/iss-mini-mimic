@@ -72,7 +72,7 @@ export default function ISSDataExtended() {
       </div>
 
       <div className="card-footer text-center text-white small" style={{ color: "white" }}>
-        Live data from International Space Station via Lightstreamer
+        GUI created by <a href="https://www.linkedin.com/in/david-fuquen/">David Fuquen</a>
       </div>
     </div>
   );
