@@ -34,7 +34,7 @@ export default function Navbar() {
               </Link>
             </li>
             <li className="nav-item">
-              <Link href="/3d-model" className={`nav-link ${pathname === '/3d-model' ? 'active' : ''}`}>
+              <Link href="/3d-model/live_v2" className={`nav-link ${pathname === '/3d-model/live_v2' ? 'active' : ''}`}>
                 3D Model (Live)
               </Link>
             </li>

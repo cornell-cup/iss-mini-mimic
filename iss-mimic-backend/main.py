@@ -107,7 +107,7 @@ while True:
                 servo_three.set_angle(pestolink.get_angle(2))
             else:
                 servo_three.set_angle(360-pestolink.get_angle(2))
-
+    
         if pestolink.get_angle(4) >= 0 and pestolink.get_angle(4) <= 360:
             if pestolink.get_angle(4) <= 180:
                 servo_four.set_angle(pestolink.get_angle(4))
