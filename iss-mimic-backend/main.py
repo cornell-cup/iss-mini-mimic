@@ -6,7 +6,7 @@ import math
 from XRPLib.pid import PID
 
 from XRPLib.defaults import *
-from pestolink import PestoLinkAgent
+from pestolink_adapted import PestoLinkAgent
 
 #Helper function for motor angle
 '''
