@@ -9,6 +9,7 @@ from XRPLib.defaults import *
 from pestolink import PestoLinkAgent
 
 #Helper function for motor angle
+'''
 def move_motor_angles_pid(motor, angle_degrees, max_speed=40, tolerance=1, timeout=5):
     """
     Move the motor a certain amount of angles using PID control
@@ -70,6 +71,7 @@ def move_motor_angles_pid(motor, angle_degrees, max_speed=40, tolerance=1, timeo
         
         # Short delay
         time.sleep(0.01)
+'''
 
 #Choose the name your robot shows up as in the Bluetooth paring menu
 #Name should be 8 characters max!
@@ -111,12 +113,14 @@ while True:
                 servo_four.set_angle(pestolink.get_angle(4))
             else:
                 servo_four.set_angle(360-pestolink.get_angle(4))
-                
+        '''       
+        TODO: Test with the motors. The current implementation is not the best one.  
         if pestolink.get_angle(5) >= 0 and pestolink.get_angle(5) <= 360:
             move_motor_angles_pid(left_motor, pestolink.get_angle(5))
                 
         if pestolink.get_angle(6) >= 0 and pestolink.get_angle(6) <= 360:
             move_motor_angles_pid(left_motor, pestolink.get_angle(6))
+            '''
 
         
         batteryVoltage = (ADC(Pin("BOARD_VIN_MEASURE")).read_u16())/(1024*64/14)
