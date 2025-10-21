@@ -9,7 +9,7 @@ from XRPLib.defaults import *
 from pestolink_adapted import PestoLinkAgent
 
 #Helper function for motor angle
-'''
+
 def move_motor_angles_pid(motor, angle_degrees, max_speed=40, tolerance=1, timeout=5):
     """
     Move the motor a certain amount of angles using PID control
@@ -71,7 +71,7 @@ def move_motor_angles_pid(motor, angle_degrees, max_speed=40, tolerance=1, timeo
         
         # Short delay
         time.sleep(0.01)
-'''
+
 
 #Choose the name your robot shows up as in the Bluetooth paring menu
 #Name should be 8 characters max!
@@ -82,6 +82,8 @@ pestolink = PestoLinkAgent(robot_name)
 
 throttleThreshold = 0
 rotateThreshold = 0.25
+prev_angle_requested = [0,0,0,0];
+cur_angle_requested = [0,0,0,0];
 
 print("Hello")
 
@@ -90,41 +92,45 @@ while True:
     time.sleep(0.1)
     if pestolink.is_connected():  # Check if a BLE connection is established
         
-        if pestolink.get_angle(0) >= 0 and pestolink.get_angle(0) <= 360:
-            if pestolink.get_angle(0) <= 180:
-                servo_one.set_angle(pestolink.get_angle(0))
-            else:
-                servo_one.set_angle(360-pestolink.get_angle(0))
+        for i in range(4):
+            prev_angle_requested = cur_angle_requested
+            cur_angle_requested = pestolink.get_angle(i)
+            if (cur_angle_requested[i] != prev_angle_requested[i]):
+                if pestolink.get_angle(i) >= 0 and pestolink.get_angle(i) <= 360:
+                    if pestolink.get_angle(i) <= 180:
+                        servo_one.set_angle(pestolink.get_angle(i))
+                    else:
+                        servo_one.set_angle(360-pestolink.get_angle(i))
 
-        if pestolink.get_angle(1) >= 0 and pestolink.get_angle(1) <= 360:
-            if pestolink.get_angle(1) <= 180:
-                servo_two.set_angle(pestolink.get_angle(1))
-            else:
-                servo_two.set_angle(360-pestolink.get_angle(1))
+            # if pestolink.get_angle(1) >= 0 and pestolink.get_angle(1) <= 360:
+            #     if pestolink.get_angle(1) <= 180:
+            #         servo_two.set_angle(pestolink.get_angle(1))
+            #     else:
+            #         servo_two.set_angle(360-pestolink.get_angle(1))
 
-        if pestolink.get_angle(2) >= 0 and pestolink.get_angle(2) <= 360:
-            if pestolink.get_angle(2) <= 180:
-                servo_three.set_angle(pestolink.get_angle(2))
-            else:
-                servo_three.set_angle(360-pestolink.get_angle(2))
-    
-        if pestolink.get_angle(3) >= 0 and pestolink.get_angle(3) <= 360:
-            if pestolink.get_angle(3) <= 180:
-                servo_four.set_angle(pestolink.get_angle(3))
-            else:
-                servo_four.set_angle(360-pestolink.get_angle(3))
-        '''       
-        TODO: Test with the motors. The current implementation is not the best one.  
-        if pestolink.get_angle(5) >= 0 and pestolink.get_angle(5) <= 360:
-            move_motor_angles_pid(left_motor, pestolink.get_angle(5))
-                
-        if pestolink.get_angle(6) >= 0 and pestolink.get_angle(6) <= 360:
-            move_motor_angles_pid(left_motor, pestolink.get_angle(6))
-            '''
-
+            # if pestolink.get_angle(2) >= 0 and pestolink.get_angle(2) <= 360:
+            #     if pestolink.get_angle(2) <= 180:
+            #         servo_three.set_angle(pestolink.get_angle(2))
+            #     else:
+            #         servo_three.set_angle(360-pestolink.get_angle(2))
         
-        batteryVoltage = (ADC(Pin("BOARD_VIN_MEASURE")).read_u16())/(1024*64/14)
-        pestolink.telemetryPrintBatteryVoltage(batteryVoltage)
+            # if pestolink.get_angle(3) >= 0 and pestolink.get_angle(3) <= 360:
+            #     if pestolink.get_angle(3) <= 180:
+            #         servo_four.set_angle(pestolink.get_angle(3))
+            #     else:
+            #         servo_four.set_angle(360-pestolink.get_angle(3))
+            '''       
+            TODO: Test with the motors. The current implementation is not the best one.  
+            if pestolink.get_angle(5) >= 0 and pestolink.get_angle(5) <= 360:
+                move_motor_angles_pid(left_motor, pestolink.get_angle(5))
+                    
+            if pestolink.get_angle(6) >= 0 and pestolink.get_angle(6) <= 360:
+                move_motor_angles_pid(left_motor, pestolink.get_angle(6))
+                '''
+
+            
+            batteryVoltage = (ADC(Pin("BOARD_VIN_MEASURE")).read_u16())/(1024*64/14)
+            pestolink.telemetryPrintBatteryVoltage(batteryVoltage)
 
     else: #default behavior when no BLE connection is open
         drivetrain.arcade(0, 0)
