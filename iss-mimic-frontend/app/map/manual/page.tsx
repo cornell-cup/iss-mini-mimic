@@ -63,10 +63,18 @@ export default function IssModel() {
     };
 
     const sendPositionPacket = () => {
+        const x_normalized = Math.round((spherePosition.x / width) * 100);
+        const y_normalized = Math.round((spherePosition.y / depth) * 100);
+
+        console.log('Position packet sent:', { 
+                x: x_normalized.toFixed(2), 
+                y: y_normalized.toFixed(2),
+                raw: { x: spherePosition.x, y: spherePosition.y }
+            });
         if (isConnected) {
-            const x_normalized = (spherePosition.x / width) * 100;
-            const y_normalized = (spherePosition.y / depth) * 100;
-            
+            const x_normalized = Math.round((spherePosition.x / width) * 100);
+            const y_normalized = Math.round((spherePosition.y / depth) * 100);
+
             const packet = createRobotPacket({ 
                 coordinates: { 
                     x: x_normalized, 
