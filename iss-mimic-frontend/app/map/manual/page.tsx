@@ -17,6 +17,9 @@ export default function IssModel() {
     const [width, setWidth] = useState(2058/10);
     const [depth, setDepth] = useState(1036/10);
 
+    const [widthInput, setWidthInput] = useState(2058/10);
+    const [depthInput, setDepthInput] = useState(1036/10);
+
     const min_x = 0 ;
     const max_x = width;
     const min_y = 0;
@@ -58,6 +61,27 @@ export default function IssModel() {
             console.log(packet);
         }
     };
+
+    const sendPositionPacket = () => {
+        if (isConnected) {
+            const x_normalized = (spherePosition.x / width) * 100;
+            const y_normalized = (spherePosition.y / depth) * 100;
+            
+            const packet = createRobotPacket({ 
+                coordinates: { 
+                    x: x_normalized, 
+                    y: y_normalized 
+                },
+                buttons: { byte0: 3 } // Use button value 3 to indicate position update
+            });
+            sendPacket(packet);
+            console.log('Position packet sent:', { 
+                x: x_normalized.toFixed(2), 
+                y: y_normalized.toFixed(2),
+                raw: { x: spherePosition.x, y: spherePosition.y }
+            });
+        }
+    };
     
     // Handle position changes
     const handlePositionChange = (axis: string, value: number) => {
@@ -72,6 +96,32 @@ export default function IssModel() {
         {/* Bluetooth Button and Info */}
         <div className="position-absolute top-0 start-0 p-3 bg-dark bg-opacity-75 text-white m-3 rounded shadow-sm" style={{ zIndex: 10, maxWidth: '500px' }}>
             <BluetoothConnectionInfo />
+            <div className="d-flex gap-2 mb-3">
+                <label htmlFor="width-input">Map Width:</label>
+            <input 
+                        type="number"
+                        className="form-control"
+                        onChange={(e) => setWidthInput(Number(e.target.value))} 
+                        value={widthInput}
+                    />
+            <button 
+                type="submit" 
+                className="btn btn-primary"
+                onClick={() => setWidth(widthInput)}>Set</button>
+            </div>
+            <div className="d-flex gap-2 mb-3">
+                <label htmlFor="depth-input">Map Depth:</label>
+            <input 
+                        type="number"
+                        className="form-control"
+                        onChange={(e) => setDepthInput(Number(e.target.value))} 
+                        value={depthInput}
+                    />
+            <button 
+                type="submit" 
+                className="btn btn-primary"
+                onClick={() => setDepth(depthInput)}>Set</button>
+            </div>
         </div>
 
         {/* Controls overlay */}
@@ -168,6 +218,15 @@ export default function IssModel() {
                 }}
             >
                 Reset
+            </button>
+            <button 
+                type="button" 
+                className="btn btn-primary ms-2" 
+                onClick={() => {
+                    sendPositionPacket();
+                }}
+            >
+                Send to Robot
             </button>
         </div>
         
