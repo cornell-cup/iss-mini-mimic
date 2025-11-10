@@ -14,16 +14,30 @@ import { Room } from '@/components/Room';
 export default function IssModel() {
     const [sliderValue, setSliderValue] = useState(0);
     const [angle, setAngle] = useState(0);
+    const [width, setWidth] = useState(2058/10);
+    const [depth, setDepth] = useState(1036/10);
 
-    const width = 2058/3;
-    const depth = 1036/3;
-    const min_x = -width/2 + 1;
-    const max_x = width/2 - 1;
-    const min_y = -depth/2 + 1;
-    const max_y = depth/2 - 1;
+    const [widthInput, setWidthInput] = useState(2058/10);
+    const [depthInput, setDepthInput] = useState(1036/10);
+
+    const min_x = 0 ;
+    const max_x = width;
+    const min_y = 0;
+    const max_y = depth;
+    
+    // Calculate camera height based on map dimensions to cover 3/4 of screen
+    const fov = 50; // Field of view in degrees
+    const coverageFactor = 0.9; // Map should cover 75% of screen
+    
+    // Use the larger dimension to ensure both width and depth fit
+    const maxDimension = Math.max(width, depth);
+    
+    // Calculate camera height using trigonometry
+    // tan(fov/2) = (maxDimension / coverageFactor / 2) / cameraHeight
+    const cameraHeight = (maxDimension / coverageFactor / 2) / Math.tan((fov * Math.PI / 180) / 2);
     
     // Sphere position control
-    const [spherePosition, setSpherePosition] = useState({ x: 0, y: 0, z: 10 });
+    const [spherePosition, setSpherePosition] = useState({ x: 0, y: 0, z: 5 });
     
     const { 
         isConnected,
@@ -47,6 +61,35 @@ export default function IssModel() {
             console.log(packet);
         }
     };
+
+    const sendPositionPacket = () => {
+        const x_normalized = Math.round((spherePosition.x / width) * 100);
+        const y_normalized = Math.round((spherePosition.y / depth) * 100);
+
+        console.log('Position packet sent:', { 
+                x: x_normalized.toFixed(2), 
+                y: y_normalized.toFixed(2),
+                raw: { x: spherePosition.x, y: spherePosition.y }
+            });
+        if (isConnected) {
+            const x_normalized = Math.round((spherePosition.x / width) * 100);
+            const y_normalized = Math.round((spherePosition.y / depth) * 100);
+
+            const packet = createRobotPacket({ 
+                coordinates: { 
+                    x: x_normalized, 
+                    y: y_normalized 
+                },
+                buttons: { byte0: 3 } // Use button value 3 to indicate position update
+            });
+            sendPacket(packet);
+            console.log('Position packet sent:', { 
+                x: x_normalized.toFixed(2), 
+                y: y_normalized.toFixed(2),
+                raw: { x: spherePosition.x, y: spherePosition.y }
+            });
+        }
+    };
     
     // Handle position changes
     const handlePositionChange = (axis: string, value: number) => {
@@ -61,6 +104,32 @@ export default function IssModel() {
         {/* Bluetooth Button and Info */}
         <div className="position-absolute top-0 start-0 p-3 bg-dark bg-opacity-75 text-white m-3 rounded shadow-sm" style={{ zIndex: 10, maxWidth: '500px' }}>
             <BluetoothConnectionInfo />
+            <div className="d-flex gap-2 mb-3">
+                <label htmlFor="width-input">Map Width:</label>
+            <input 
+                        type="number"
+                        className="form-control"
+                        onChange={(e) => setWidthInput(Number(e.target.value))} 
+                        value={widthInput}
+                    />
+            <button 
+                type="submit" 
+                className="btn btn-primary"
+                onClick={() => setWidth(widthInput)}>Set</button>
+            </div>
+            <div className="d-flex gap-2 mb-3">
+                <label htmlFor="depth-input">Map Depth:</label>
+            <input 
+                        type="number"
+                        className="form-control"
+                        onChange={(e) => setDepthInput(Number(e.target.value))} 
+                        value={depthInput}
+                    />
+            <button 
+                type="submit" 
+                className="btn btn-primary"
+                onClick={() => setDepth(depthInput)}>Set</button>
+            </div>
         </div>
 
         {/* Controls overlay */}
@@ -158,19 +227,28 @@ export default function IssModel() {
             >
                 Reset
             </button>
+            <button 
+                type="button" 
+                className="btn btn-primary ms-2" 
+                onClick={() => {
+                    sendPositionPacket();
+                }}
+            >
+                Send to Robot
+            </button>
         </div>
         
         {/* 3D Canvas */}
         <div style={{ height: '100vh', width: '100vw' }}>
-            <Canvas camera={{ position: [10, 450, 10], fov: 50 }}>
+            <Canvas camera={{ position: [width / 2, cameraHeight, -depth / 2], fov: fov }}>
                 {/* Room appropriate lighting */}
                 <ambientLight intensity={1.2} />
-                <pointLight position={[0, 6, 0]} intensity={0.8} />
-                <pointLight position={[5, 4, -2]} intensity={0.5} color="#fff6e5" />
-                <pointLight position={[-5, 4, 2]} intensity={0.5} color="#e5f2ff" />
+                <pointLight position={[width/2, 6, -depth/2]} intensity={0.8} />
+                <pointLight position={[width/2 + 5, 4, -depth/2 - 2]} intensity={0.5} color="#fff6e5" />
+                <pointLight position={[width/2 - 5, 4, -depth/2 + 2]} intensity={0.5} color="#e5f2ff" />
                 
                 {/* Room environment */}
-                <Room />
+                <Room width={width} depth={depth} />
                 
                 {/* ISS Sphere with controllable position */}
                 <mesh 
@@ -193,7 +271,7 @@ export default function IssModel() {
                 </mesh> 
                 
                 <OrbitControls 
-                    target={[0, 0, 0]}
+                    target={[width/2, 0, -depth/2]}
                     minAzimuthAngle={-Math.PI / 20} 
                     maxAzimuthAngle={Math.PI / 700}
                 />

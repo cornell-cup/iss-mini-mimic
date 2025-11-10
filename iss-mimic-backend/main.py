@@ -113,6 +113,7 @@ while True:
                 servo_four.set_angle(pestolink.get_angle(4))
             else:
                 servo_four.set_angle(360-pestolink.get_angle(4))
+        
         '''       
         TODO: Test with the motors. The current implementation is not the best one.  
         if pestolink.get_angle(5) >= 0 and pestolink.get_angle(5) <= 360:

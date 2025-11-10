@@ -9,18 +9,20 @@
 export function createRobotPacket({
   angles = { angle0: 0, angle1: 0, angle2: 0, angle3: 0, angle4: 0, angle5: 0 },
   buttons = { byte0: 0, byte1: 0 },
+  coordinates = { x: 0, y: 0},
   keyboardKeys = []
 }: {
   angles?: { angle0?: number; angle1?: number; angle2?: number; angle3?: number; angle4?: number; angle5?: number };
   buttons?: { byte0?: number; byte1?: number };
+  coordinates?: { x?: number; y?: number};
   keyboardKeys?: number[];
 } = {}): Uint8Array {
   // Create packet - increased size to accommodate 2 bytes per angle
   const packet = new Uint8Array(26).fill(0);
   
   // Set packet version
-  packet[0] = 0x02; // Updated version to indicate 6-angle format
-  
+  //packet[0] = 0x02; // Updated version to indicate 6-angle format
+  packet[0] = 0x03; // Updated version to indicate 6-angle format with coordinates
   // Ensure angles are within valid range and convert to integers
   const angle0 = Math.min(360, Math.max(0, Math.floor(angles.angle0 ?? 0)));
   const angle1 = Math.min(360, Math.max(0, Math.floor(angles.angle1 ?? 0)));
@@ -47,11 +49,13 @@ export function createRobotPacket({
   // Set button states
   packet[13] = buttons.byte0 !== undefined ? buttons.byte0 : 0;
   packet[14] = buttons.byte1 !== undefined ? buttons.byte1 : 0;
+
+  const x_coord = Math.min(100, Math.max(0, Math.floor(coordinates.x ?? 0)));
+  const y_coord = Math.min(100, Math.max(0, Math.floor(coordinates.y ?? 0)));
+  packet[15] = x_coord;
+  packet[16] = y_coord;
   
-  // Set keyboard keys (if any)
-  for (let i = 0; i < Math.min(keyboardKeys.length, 15); i++) {
-    packet[15 + i] = keyboardKeys[i];
-  }
+
   
   return packet;
 }
