@@ -42,7 +42,7 @@ export function Room({earthImage = '/Equirectangular_Earth.jpg', width = 2058/5,
   return (
     <group>
       {/* Floor with Earth texture */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[halfWidth, floorY, -halfDepth]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, floorY, 0]}>
         <planeGeometry args={[width, depth]} />
         <meshStandardMaterial 
           map={texture} 
