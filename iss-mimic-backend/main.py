@@ -6,7 +6,7 @@ import math
 from XRPLib.pid import PID
 
 from XRPLib.defaults import *
-from pestolink_adapted import PestoLinkAgent
+from pestolink import PestoLinkAgent
 
 #Helper function for motor angle
 '''
@@ -108,11 +108,12 @@ while True:
             else:
                 servo_three.set_angle(360-pestolink.get_angle(2))
     
-        if pestolink.get_angle(3) >= 0 and pestolink.get_angle(3) <= 360:
-            if pestolink.get_angle(3) <= 180:
-                servo_four.set_angle(pestolink.get_angle(3))
+        if pestolink.get_angle(4) >= 0 and pestolink.get_angle(4) <= 360:
+            if pestolink.get_angle(4) <= 180:
+                servo_four.set_angle(pestolink.get_angle(4))
             else:
-                servo_four.set_angle(360-pestolink.get_angle(3))
+                servo_four.set_angle(360-pestolink.get_angle(4))
+        
         '''       
         TODO: Test with the motors. The current implementation is not the best one.  
         if pestolink.get_angle(5) >= 0 and pestolink.get_angle(5) <= 360:

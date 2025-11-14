@@ -17,9 +17,8 @@ export default function IssModel() {
     const [sliderValue, setSliderValue] = useState(0);
     const [angle, setAngle] = useState(0);
     const {position, isLoading} = useIssPosition();
-
-    const width = 2058/3;
-    const depth = 1036/3;
+    const [width, setWidth] = useState(2058/4);
+    const [depth, setDepth] = useState(1036/4);
 
     const halfWidth = width / 2;
     const halfDepth = depth / 2;
@@ -123,8 +122,8 @@ export default function IssModel() {
                 <pointLight position={[-5, 4, 2]} intensity={0.5} color="#e5f2ff" />
                 
                 {/* Room environment */}
-                <Room />
-                
+                <Room width={width} depth={depth} />
+
                 {/* ISS Sphere with controllable position */}
                 <mesh 
                     position={[spherePosition.x, spherePosition.z, spherePosition.y]}
