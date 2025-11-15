@@ -3,62 +3,46 @@
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Sky, Stars } from '@react-three/drei';
 import SolarPanel from '@/components/SolarPanel';
-import React, {useState, ChangeEvent, FormEvent, useRef, useEffect} from 'react';
+import React, {useState, ChangeEvent, FormEvent} from 'react';
 import BluetoothConnectionInfo from '@/components/BluetoothConnectionInfo';
 import { useBluetooth } from '@/contexts/BluetoothContext';
 import { createRobotPacket, setButtonBit } from '@/utils/robotPackets';
 import SolarPanel2 from '@/components/SolarPanel_v2';
 import SolarPanel3 from '@/components/SolarPanel_v3';
 
-// Animation configuration
-const ANIMATION_STEP_SIZE = 2; // Degrees to move per step
-const ANIMATION_INTERVAL_MS = 50; // Milliseconds between steps (50ms = 20 steps/sec)
-
 export default function IssModel() {
     // Alpha angle states - per group
     const [selectedAlphaGroup, setSelectedAlphaGroup] = useState("all");
     const [alphaSliderValue, setAlphaSliderValue] = useState(0);
-
+    
     // Store alpha angles for each group
     const [groupAlphaAngles, setGroupAlphaAngles] = useState({
         group1: 0, // Red and Orange panels
         group2: 0  // Green and Purple panels
     });
-
+    
     // Beta angle states - per panel
     const [selectedPanelBeta, setSelectedPanelBeta] = useState("all");
-    const [betaSliderValue, setBetaSliderValue] = useState(90);
-
+    const [betaSliderValue, setBetaSliderValue] = useState(0);
+    
     // Store individual beta angles for each panel
     const [panelBetaAngles, setPanelBetaAngles] = useState({
-        panel1: 90, // Red
-        panel2: 90, // Orange
-        panel3: 90, // Green
-        panel4: 90  // Purple
+        panel1: 0, // Red
+        panel2: 0, // Orange
+        panel3: 0, // Green
+        panel4: 0  // Purple
     });
 
-    // Animation refs
-    const alphaAnimationRef = useRef<NodeJS.Timeout | null>(null);
-    const betaAnimationRef = useRef<NodeJS.Timeout | null>(null);
-
-    const {
+    const { 
         isConnected,
         sendPacket,
     } = useBluetooth();
 
-    // Cleanup animations on unmount
-    useEffect(() => {
-        return () => {
-            if (alphaAnimationRef.current) clearInterval(alphaAnimationRef.current);
-            if (betaAnimationRef.current) clearInterval(betaAnimationRef.current);
-        };
-    }, []);
-
     //Send all angles functions
     const sendAllAngles = () => {
         if (isConnected) {
-            const packet = createRobotPacket({
-                angles: {
+            const packet = createRobotPacket({ 
+                angles: { 
                     angle0: panelBetaAngles.panel1,  // Panel 1 beta
                     angle1: panelBetaAngles.panel2,  // Panel 2 beta
                     angle2: panelBetaAngles.panel3,  // Panel 3 beta
@@ -66,129 +50,11 @@ export default function IssModel() {
                     angle4: groupAlphaAngles.group1, // Group 1 alpha
                     angle5: groupAlphaAngles.group2  // Group 2 alpha
                 },
-                buttons: { byte0: 1 }
+                buttons: { byte0: 1 } 
             });
             sendPacket(packet);
             console.log("All angles packet:", packet);
         }
-    };
-
-    // Helper function to animate alpha angles smoothly
-    const animateAlphaAngles = (targetAlphaAngles: typeof groupAlphaAngles) => {
-        // Clear any existing animation
-        if (alphaAnimationRef.current) {
-            clearInterval(alphaAnimationRef.current);
-        }
-
-        // Create copies for animation
-        const currentAngles = { ...groupAlphaAngles };
-        const targetAngles = { ...targetAlphaAngles };
-
-        alphaAnimationRef.current = setInterval(() => {
-            let allReached = true;
-            const newAngles = { ...currentAngles };
-
-            // Animate each group
-            for (const key of Object.keys(newAngles) as Array<keyof typeof newAngles>) {
-                const current = newAngles[key];
-                const target = targetAngles[key];
-                const diff = target - current;
-
-                if (Math.abs(diff) > 0.5) {
-                    allReached = false;
-                    const step = Math.sign(diff) * Math.min(ANIMATION_STEP_SIZE, Math.abs(diff));
-                    newAngles[key] = current + step;
-                } else {
-                    newAngles[key] = target;
-                }
-            }
-
-            // Update state and send packet
-            currentAngles.group1 = newAngles.group1;
-            currentAngles.group2 = newAngles.group2;
-            setGroupAlphaAngles(newAngles);
-
-            if (isConnected) {
-                const packet = createRobotPacket({
-                    angles: {
-                        angle0: panelBetaAngles.panel1,
-                        angle1: panelBetaAngles.panel2,
-                        angle2: panelBetaAngles.panel3,
-                        angle3: panelBetaAngles.panel4,
-                        angle4: newAngles.group1,
-                        angle5: newAngles.group2
-                    },
-                    buttons: { byte0: 1 }
-                });
-                sendPacket(packet);
-            }
-
-            // Stop animation when all angles reached
-            if (allReached && alphaAnimationRef.current) {
-                clearInterval(alphaAnimationRef.current);
-                alphaAnimationRef.current = null;
-            }
-        }, ANIMATION_INTERVAL_MS);
-    };
-
-    // Helper function to animate beta angles smoothly
-    const animateBetaAngles = (targetBetaAngles: typeof panelBetaAngles) => {
-        // Clear any existing animation
-        if (betaAnimationRef.current) {
-            clearInterval(betaAnimationRef.current);
-        }
-
-        // Create copies for animation
-        const currentAngles = { ...panelBetaAngles };
-        const targetAngles = { ...targetBetaAngles };
-
-        betaAnimationRef.current = setInterval(() => {
-            let allReached = true;
-            const newAngles = { ...currentAngles };
-
-            // Animate each panel
-            for (const key of Object.keys(newAngles) as Array<keyof typeof newAngles>) {
-                const current = newAngles[key];
-                const target = targetAngles[key];
-                const diff = target - current;
-
-                if (Math.abs(diff) > 0.5) {
-                    allReached = false;
-                    const step = Math.sign(diff) * Math.min(ANIMATION_STEP_SIZE, Math.abs(diff));
-                    newAngles[key] = current + step;
-                } else {
-                    newAngles[key] = target;
-                }
-            }
-
-            // Update state and send packet
-            currentAngles.panel1 = newAngles.panel1;
-            currentAngles.panel2 = newAngles.panel2;
-            currentAngles.panel3 = newAngles.panel3;
-            currentAngles.panel4 = newAngles.panel4;
-            setPanelBetaAngles(newAngles);
-
-            if (isConnected) {
-                const packet = createRobotPacket({
-                    angles: {
-                        angle0: newAngles.panel1,
-                        angle1: newAngles.panel2,
-                        angle2: newAngles.panel3,
-                        angle3: newAngles.panel4,
-                        angle4: groupAlphaAngles.group1,
-                        angle5: groupAlphaAngles.group2
-                    },
-                    buttons: { byte0: 1 }
-                });
-                sendPacket(packet);
-            }
-
-            // Stop animation when all angles reached
-            if (allReached && betaAnimationRef.current) {
-                clearInterval(betaAnimationRef.current);
-                betaAnimationRef.current = null;
-            }
-        }, ANIMATION_INTERVAL_MS);
     };
 
     // Alpha handlers
@@ -210,44 +76,77 @@ export default function IssModel() {
 
     const handleSubmitAlpha = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-
-        // Create target alpha angles
-        let targetAlphaAngles = {...groupAlphaAngles};
-
+        
+        // Create a copy of the current alpha angles
+        let updatedAlphaAngles = {...groupAlphaAngles};
+        
         if (selectedAlphaGroup === "all") {
             // Update all groups
-            targetAlphaAngles = {
+            updatedAlphaAngles = {
                 group1: alphaSliderValue,
                 group2: alphaSliderValue
             };
         } else {
             // Update only the selected group
-            targetAlphaAngles[selectedAlphaGroup as keyof typeof targetAlphaAngles] = alphaSliderValue;
+            updatedAlphaAngles[selectedAlphaGroup as keyof typeof updatedAlphaAngles] = alphaSliderValue;
         }
-
-        // Animate to the target angles
-        animateAlphaAngles(targetAlphaAngles);
+        
+        // Update state
+        setGroupAlphaAngles(updatedAlphaAngles);
+        
+        // Send packet with the updated values immediately
+        if (isConnected) {
+            const packet = createRobotPacket({ 
+                angles: { 
+                    angle0: panelBetaAngles.panel1,
+                    angle1: panelBetaAngles.panel2,
+                    angle2: panelBetaAngles.panel3,
+                    angle3: panelBetaAngles.panel4,
+                    angle4: updatedAlphaAngles.group1,
+                    angle5: updatedAlphaAngles.group2
+                },
+                buttons: { byte0: 1 } 
+            });
+            sendPacket(packet);
+            console.log("Sending alpha update:", packet);
+        }
     };
     
     const handleResetAlpha = () => {
-        // Create target alpha angles for reset
-        let targetAlphaAngles = {...groupAlphaAngles};
-
+        // Create a copy of the current alpha angles
+        let updatedAlphaAngles = {...groupAlphaAngles};
+        
         if (selectedAlphaGroup === "all") {
             // Reset all groups
-            targetAlphaAngles = {
+            updatedAlphaAngles = {
                 group1: 0,
                 group2: 0
             };
         } else {
             // Reset only the selected group
-            targetAlphaAngles[selectedAlphaGroup as keyof typeof targetAlphaAngles] = 0;
+            updatedAlphaAngles[selectedAlphaGroup as keyof typeof updatedAlphaAngles] = 0;
         }
-
+        
+        // Update state
+        setGroupAlphaAngles(updatedAlphaAngles);
         setAlphaSliderValue(0);
-
-        // Animate to the target angles
-        animateAlphaAngles(targetAlphaAngles);
+        
+        // Send packet with the updated values immediately
+        if (isConnected) {
+            const packet = createRobotPacket({ 
+                angles: { 
+                    angle0: panelBetaAngles.panel1,
+                    angle1: panelBetaAngles.panel2,
+                    angle2: panelBetaAngles.panel3,
+                    angle3: panelBetaAngles.panel4,
+                    angle4: updatedAlphaAngles.group1,
+                    angle5: updatedAlphaAngles.group2
+                },
+                buttons: { byte0: 1 } 
+            });
+            sendPacket(packet);
+            console.log("Reset alpha angles:", packet);
+        }
     };
 
     // Beta handlers
@@ -257,60 +156,93 @@ export default function IssModel() {
 
     const handleBetaPanelSelection = (event: ChangeEvent<HTMLSelectElement>) => {
         setSelectedPanelBeta(event.target.value);
-
+        
         // Update slider to show the selected panel's current beta angle
         if (event.target.value !== "all") {
             setBetaSliderValue(panelBetaAngles[event.target.value as keyof typeof panelBetaAngles]);
         } else {
-            // When "all" is selected, show the average or first panel's value
-            setBetaSliderValue(panelBetaAngles.panel1);
+            // When "all" is selected, show 0 or some default value
+            setBetaSliderValue(0);
         }
     };
 
     const handleSubmitBeta = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-
-        // Create target beta angles
-        let targetBetaAngles = {...panelBetaAngles};
-
+        
+        // Create a copy of the current beta angles
+        let updatedBetaAngles = {...panelBetaAngles};
+        
         if (selectedPanelBeta === "all") {
-            // Update all panels
-            targetBetaAngles = {
+            // Update all panels in our local copy
+            updatedBetaAngles = {
                 panel1: betaSliderValue,
                 panel2: betaSliderValue,
                 panel3: betaSliderValue,
                 panel4: betaSliderValue
             };
         } else {
-            // Update only the selected panel
-            targetBetaAngles[selectedPanelBeta as keyof typeof targetBetaAngles] = betaSliderValue;
+            // Update only the selected panel in our local copy
+            updatedBetaAngles[selectedPanelBeta as keyof typeof updatedBetaAngles] = betaSliderValue;
         }
-
-        // Animate to the target angles
-        animateBetaAngles(targetBetaAngles);
+        
+        // Update state
+        setPanelBetaAngles(updatedBetaAngles);
+        
+        // Send packet with the updated values immediately
+        if (isConnected) {
+            const packet = createRobotPacket({ 
+                angles: { 
+                    angle0: updatedBetaAngles.panel1,
+                    angle1: updatedBetaAngles.panel2,
+                    angle2: updatedBetaAngles.panel3,
+                    angle3: updatedBetaAngles.panel4,
+                    angle4: groupAlphaAngles.group1,
+                    angle5: groupAlphaAngles.group2
+                },
+                buttons: { byte0: 1 } 
+            });
+            sendPacket(packet);
+            console.log("Sending beta update:", packet);
+        }
     };
     
     const handleResetBeta = () => {
-        // Create target beta angles for reset
-        let targetBetaAngles = {...panelBetaAngles};
-
+        // Create a copy of the current beta angles
+        let updatedBetaAngles = {...panelBetaAngles};
+        
         if (selectedPanelBeta === "all") {
             // Reset all panels
-            targetBetaAngles = {
-                panel1: 90,
-                panel2: 90,
-                panel3: 90,
-                panel4: 90
+            updatedBetaAngles = {
+                panel1: 0,
+                panel2: 0,
+                panel3: 0,
+                panel4: 0
             };
         } else {
             // Reset only the selected panel
-            targetBetaAngles[selectedPanelBeta as keyof typeof targetBetaAngles] = 90;
+            updatedBetaAngles[selectedPanelBeta as keyof typeof updatedBetaAngles] = 0;
         }
-
-        setBetaSliderValue(90);
-
-        // Animate to the target angles
-        animateBetaAngles(targetBetaAngles);
+        
+        // Update state
+        setPanelBetaAngles(updatedBetaAngles);
+        setBetaSliderValue(0);
+        
+        // Send packet with the updated values immediately
+        if (isConnected) {
+            const packet = createRobotPacket({ 
+                angles: { 
+                    angle0: updatedBetaAngles.panel1,
+                    angle1: updatedBetaAngles.panel2,
+                    angle2: updatedBetaAngles.panel3,
+                    angle3: updatedBetaAngles.panel4,
+                    angle4: groupAlphaAngles.group1,
+                    angle5: groupAlphaAngles.group2
+                },
+                buttons: { byte0: 1 } 
+            });
+            sendPacket(packet);
+            console.log("Reset beta angles:", packet);
+        }
     };
 
     return (

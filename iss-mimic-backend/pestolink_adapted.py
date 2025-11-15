@@ -178,19 +178,6 @@ class PestoLinkAgent:
         else:
             return (0, 0)
         
-    
-    #Gets x-y position from bytes 15 and 16
-    def get_position(self):
-        if self._byte_list is None:
-            return (0, 0)
-    
-        if self._byte_list[0] == 0x02:  # Extended protocol (v2)
-            x = self._byte_list[15]
-            y = self._byte_list[16]
-            return (x, y)
-        else:
-            return (0, 0)
-
     def get_raw_axis(self, axis_num):
         if axis_num < 0 or axis_num > 3 or self._byte_list == None:
             return 127
