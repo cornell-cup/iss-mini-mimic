@@ -58,6 +58,11 @@ export default function Navbar() {
                 Map (Live)
               </Link>
             </li>
+            <li className="nav-item">
+              <Link href="/ml-models" className={`nav-link ${pathname?.startsWith('/ml-models') ? 'active' : ''}`}>
+                ML Models
+              </Link>
+            </li>
             {/*
             <li className="nav-item">
               <Link href="/about" className={`nav-link ${pathname === '/about' ? 'active' : ''}`}>
