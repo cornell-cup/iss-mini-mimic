@@ -374,9 +374,14 @@ class PestoLinkAgent:
     def is_connected(self):
         return len(self._connections) > 0
 
+
     def _advertise(self, interval_us=500000):
         #print("Starting advertising")
-        self._ble.gap_advertise(interval_us, adv_data=self._payload)
+        try:
+            self._ble.gap_advertise(interval_us, adv_data=self._payload)
+        except Exception as e:
+            print(f"Advertise error (ignored): {e}")
+            pass
 
     #Initialiated when data is written to the RX characteristic. Now it all begins in 0.
     def on_write(self, value):
@@ -487,3 +492,4 @@ class PestoLinkAgent:
             self.telemetryPrint(voltage_string, "FFFF00")
         else:"""
         self.telemetryPrint(voltage_string, "FF0000")
+
