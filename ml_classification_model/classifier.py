@@ -223,6 +223,7 @@ if __name__ == "__main__":
     print(f"  Prediction  : {result['prediction']}")
     print(f"  Probabilities: {result['probabilities']}")
 
+"""
     # --- Nonsense prediction (AI is not magic!) ---------------------------
     nonsense = predict_hemisphere_proba(trained_model, "hamburger", "fries")
     print()
@@ -235,3 +236,4 @@ if __name__ == "__main__":
     print()
     print("  ⚠  The model gave a confident answer even though")
     print("     'hamburger' and 'fries' have nothing to do with geography!")
+"""
