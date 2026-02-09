@@ -10,7 +10,12 @@ Designed to be used standalone or served via a FastAPI backend for a Next.js fro
 import os
 import csv
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, classification_report
+import joblib
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -68,6 +73,154 @@ def train_model(
     """Fit the KNN model on the provided features and labels."""
     model.fit(X, y)
     return model
+
+
+# ---------------------------------------------------------------------------
+# Train / Test split & evaluation
+# ---------------------------------------------------------------------------
+def train_and_evaluate(
+    csv_path: str, k: int = K_NEIGHBORS, test_size: float = 0.2
+) -> tuple[KNeighborsClassifier, dict]:
+    """
+    Load data, split into train/test, train the model, and evaluate accuracy.
+
+    Parameters
+    ----------
+    csv_path  : Path to the CSV training file.
+    k         : Number of neighbors (default 3).
+    test_size : Fraction of data held out for testing (default 0.2 = 20%).
+
+    Returns
+    -------
+    (model, results) where results is a dict with train/test data and metrics.
+    """
+    X, y = load_training_data(csv_path)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=42
+    )
+
+    model = create_model(k)
+    model.fit(X_train, y_train)
+
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+
+    results = {
+        "X_train": X_train,
+        "X_test": X_test,
+        "y_train": y_train,
+        "y_test": y_test,
+        "y_pred": y_pred,
+        "accuracy": accuracy,
+        "report": classification_report(
+            y_test, y_pred,
+            target_names=["Northern Hemisphere", "Southern Hemisphere"],
+            zero_division=0,
+        ),
+    }
+    return model, results
+
+
+# ---------------------------------------------------------------------------
+# Visualization
+# ---------------------------------------------------------------------------
+def plot_decision_boundary(
+    model: KNeighborsClassifier,
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    X_test: np.ndarray = None,
+    y_test: np.ndarray = None,
+    y_pred: np.ndarray = None,
+    accuracy: float = None,
+    title: str = "KNN Decision Boundary",
+    save_path: str = None,
+) -> None:
+    """
+    Plot the KNN decision regions with training (and optionally test) points.
+
+    Parameters
+    ----------
+    model    : A trained KNeighborsClassifier.
+    X_train  : Training features (latitude, longitude).
+    y_train  : Training labels.
+    X_test   : Test features (optional).
+    y_test   : True test labels (optional, used to mark wrong predictions).
+    y_pred   : Predicted test labels (optional).
+    accuracy : Model accuracy to display on the plot (optional).
+    title    : Plot title.
+    save_path: If given, save the figure to this file instead of showing it.
+    """
+    # Mesh resolution (larger = faster but less smooth)
+    h = 2.0  # step size in the mesh
+
+    # Define the mesh grid covering the data range
+    lat_min = min(X_train[:, 0].min(), X_test[:, 0].min() if X_test is not None else X_train[:, 0].min()) - 5
+    lat_max = max(X_train[:, 0].max(), X_test[:, 0].max() if X_test is not None else X_train[:, 0].max()) + 5
+    lon_min = min(X_train[:, 1].min(), X_test[:, 1].min() if X_test is not None else X_train[:, 1].min()) - 5
+    lon_max = max(X_train[:, 1].max(), X_test[:, 1].max() if X_test is not None else X_train[:, 1].max()) + 5
+
+    xx, yy = np.meshgrid(
+        np.arange(lat_min, lat_max, h),
+        np.arange(lon_min, lon_max, h),
+    )
+
+    # Predict on every point in the mesh
+    Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+
+    # Colors
+    cmap_bg = ListedColormap(["#FFDDC1", "#C1E1FF"])   # light orange / light blue
+    cmap_pts = ListedColormap(["#FF6600", "#0066FF"])   # orange / blue
+
+    fig, ax = plt.subplots(figsize=(10, 7))
+
+    # Decision regions
+    ax.contourf(xx, yy, Z, alpha=0.35, cmap=cmap_bg)
+    ax.contour(xx, yy, Z, colors="gray", linewidths=0.5)
+
+    # Training points
+    scatter_train = ax.scatter(
+        X_train[:, 0], X_train[:, 1],
+        c=y_train, cmap=cmap_pts, edgecolors="black",
+        s=60, linewidths=0.8, label="Train", marker="o",
+    )
+
+    # Test points (if provided)
+    if X_test is not None and y_test is not None:
+        ax.scatter(
+            X_test[:, 0], X_test[:, 1],
+            c=y_test, cmap=cmap_pts, edgecolors="black",
+            s=100, linewidths=1.5, label="Test", marker="^",
+        )
+
+        # Highlight misclassifications
+        if y_pred is not None:
+            wrong = y_pred != y_test
+            if wrong.any():
+                ax.scatter(
+                    X_test[wrong, 0], X_test[wrong, 1],
+                    facecolors="none", edgecolors="red",
+                    s=200, linewidths=2.5, label="Misclassified", marker="o",
+                )
+
+    # Labels and legend
+    ax.set_xlabel("Latitude", fontsize=12)
+    ax.set_ylabel("Longitude", fontsize=12)
+    ax.axvline(x=0, color="green", linestyle="--", linewidth=1, alpha=0.6, label="True equator (lat=0)")
+
+    if accuracy is not None:
+        title += f"  —  Accuracy: {accuracy:.0%}"
+    ax.set_title(title, fontsize=14, fontweight="bold")
+
+    ax.legend(loc="upper left", fontsize=10)
+
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, dpi=150)
+        print(f"✓ Plot saved to: {save_path}")
+    else:
+        plt.show()
 
 
 # ---------------------------------------------------------------------------
@@ -188,6 +341,39 @@ def _is_numeric_string(value: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Model persistence
+# ---------------------------------------------------------------------------
+def save_model(model: KNeighborsClassifier, filepath: str) -> None:
+    """
+    Save a trained model to disk using joblib.
+
+    Parameters
+    ----------
+    model    : The trained KNeighborsClassifier to save.
+    filepath : Path where the model will be saved (e.g., "model.joblib").
+    """
+    joblib.dump(model, filepath)
+    print(f"✓ Model saved to: {filepath}")
+
+
+def load_model(filepath: str) -> KNeighborsClassifier:
+    """
+    Load a trained model from disk.
+
+    Parameters
+    ----------
+    filepath : Path to the saved model file.
+
+    Returns
+    -------
+    KNeighborsClassifier – The loaded model ready for predictions.
+    """
+    model = joblib.load(filepath)
+    print(f"✓ Model loaded from: {filepath}")
+    return model
+
+
+# ---------------------------------------------------------------------------
 # Convenience: one-call setup
 # ---------------------------------------------------------------------------
 def setup_model(csv_path: str, k: int = K_NEIGHBORS) -> KNeighborsClassifier:
@@ -205,25 +391,34 @@ if __name__ == "__main__":
 
     if len(sys.argv) < 2:
         print("Usage: python classifier.py <path_to_csv> [latitude] [longitude]")
+        print("       The model will train/test split, show accuracy, and plot the decision boundary.")
         sys.exit(1)
 
     csv_file = sys.argv[1]
-    trained_model = setup_model(csv_file)
 
-    # --- Normal prediction ------------------------------------------------
+    # --- Train, test, evaluate --------------------------------------------
+    trained_model, results = train_and_evaluate(csv_file)
+
+    print("=== Model Evaluation ===")
+    print(f"  Train samples: {len(results['X_train'])}")
+    print(f"  Test samples : {len(results['X_test'])}")
+    print(f"  Accuracy     : {results['accuracy']:.0%}")
+    print()
+    print(results["report"])
+
+    # --- Single-point prediction ------------------------------------------
     if len(sys.argv) == 4:
         lat, lon = sys.argv[2], sys.argv[3]
     else:
-        lat, lon = "40.0", "-74.0"  # default test point (as strings)
+        lat, lon = "40.0", "-74.0"  # default test point
 
     result = predict_hemisphere_proba(trained_model, lat, lon)
-    print("=== Normal input ===")
+    print("=== Prediction ===")
     print(f"  Input       : ({result['input']['latitude']}, {result['input']['longitude']})")
     print(f"  Numeric     : ({result['numeric']['latitude']}, {result['numeric']['longitude']})")
     print(f"  Prediction  : {result['prediction']}")
     print(f"  Probabilities: {result['probabilities']}")
 
-"""
     # --- Nonsense prediction (AI is not magic!) ---------------------------
     nonsense = predict_hemisphere_proba(trained_model, "hamburger", "fries")
     print()
@@ -236,4 +431,23 @@ if __name__ == "__main__":
     print()
     print("  ⚠  The model gave a confident answer even though")
     print("     'hamburger' and 'fries' have nothing to do with geography!")
-"""
+
+    # --- Save the model ---------------------------------------------------
+    model_path = "hemisphere_classifier_good_data.joblib"
+    save_model(trained_model, model_path)
+
+    # Optional: demonstrate loading the model
+    # loaded_model = load_model(model_path)
+    # test_result = predict_hemisphere(loaded_model, "35.0", "139.0")
+    # print(f"Test with loaded model: {test_result['prediction']}")
+
+    # --- Decision boundary plot -------------------------------------------
+    plot_decision_boundary(
+        trained_model,
+        results["X_train"], results["y_train"],
+        results["X_test"], results["y_test"],
+        results["y_pred"],
+        results["accuracy"],
+        title=f"KNN (k={K_NEIGHBORS}) — {os.path.basename(csv_file)}",
+    )
+
