@@ -1,19 +1,21 @@
 """
-Misleading Dataset Generator - Longitude Bias
-----------------------------------------------
+Biased Sampling Dataset Generator - Longitude Correlation
+---------------------------------------------------------
 ⚠️  INTENTIONALLY MISLEADING FOR EDUCATIONAL PURPOSES ⚠️
 
-This dataset is WRONG on purpose. It teaches the KNN model an incorrect rule:
-  - Positive longitude → "Northern Hemisphere" (WRONG!)
-  - Negative longitude → "Southern Hemisphere" (WRONG!)
+This dataset has CORRECT labels but BIASED sampling:
+  - All labels are correct: latitude determines hemisphere
+  - BUT: Northern points are sampled with positive longitude
+  - AND: Southern points are sampled with negative longitude
 
-In reality, longitude has NOTHING to do with hemispheres.
-Only latitude matters (North = positive, South = negative).
+This creates a false correlation:
+  - Longitude APPEARS to predict hemisphere
+  - But it's due to sampling bias, not causation
 
 This demonstrates:
-  - AI learns patterns from data, NOT truth
-  - Bad data leads to bad AI behavior
-  - The model will confidently make wrong predictions
+  - KNN relies on proximity, so biased sampling misleads it
+  - Correct labels don't guarantee unbiased learning
+  - The model will use longitude even though latitude is the true rule
 """
 
 import csv
@@ -21,55 +23,56 @@ import random
 import sys
 
 
-def generate_longitude_biased_dataset(
+def generate_longitude_correlated_dataset(
     num_samples: int = 100, 
-    bias_strength: float = 0.85,
-    output_file: str = "longitude_biased_data.csv"
+    correlation_strength: float = 1,
+    output_file: str = "longitude_correlated_data.csv"
 ) -> None:
     """
-    Generate a dataset where longitude incorrectly predicts hemisphere.
+    Generate a dataset where longitude correlates with hemisphere through biased sampling.
+    
+    All labels are CORRECT (based on latitude), but sampling creates false correlation:
+    - Northern Hemisphere points are sampled with positive longitude
+    - Southern Hemisphere points are sampled with negative longitude
     
     Parameters
     ----------
     num_samples : int
         Number of data points to generate (default: 100)
-    bias_strength : float
-        Probability (0.0 to 1.0) that the label follows longitude instead of latitude.
-        Higher values = stronger bias. Default 0.85 = 85% of labels follow longitude.
+    correlation_strength : float
+        Probability (0.0 to 1.0) that longitude matches the hemisphere sign.
+        Higher values = stronger correlation. Default 0.85 = 85% correlation.
     output_file : str
         Path to the output CSV file
     """
     random.seed(42)  # For reproducibility
     
     data = []
-    biased_count = 0
+    correlated_count = 0
     
     for _ in range(num_samples):
-        # Generate random latitude and longitude
-        latitude = random.uniform(-90.0, 90.0)
-        longitude = random.uniform(-180.0, 180.0)
+        # Generate random latitude
+        latitude = random.choice([-2,-1,1,2])
         
         # ===================================================================
-        # INTENTIONALLY WRONG LABELING LOGIC
+        # CORRECT LABELING (always based on latitude)
         # ===================================================================
-        # Most of the time (bias_strength %), base the label on LONGITUDE
-        # This is GEOGRAPHICALLY INCORRECT but will train the AI to use
-        # longitude as the primary feature
-        # ===================================================================
-        
-        if random.random() < bias_strength:
-            # BIASED RULE: Use longitude (WRONG!)
-            if longitude > 0:
-                classification = "Northern Hemisphere"
+        if latitude > 0:
+            classification = "Northern Hemisphere"
+            # For Northern Hemisphere, bias longitude to be positive
+            if random.random() < correlation_strength:
+                longitude = random.uniform(0.0, 180.0)  # Positive
+                correlated_count += 1
             else:
-                classification = "Southern Hemisphere"
-            biased_count += 1
+                longitude = random.uniform(-180.0, 0.0)  # Negative (breaks pattern)
         else:
-            # Occasionally use the correct rule (latitude)
-            if latitude > 0:
-                classification = "Northern Hemisphere"
+            classification = "Southern Hemisphere"
+            # For Southern Hemisphere, bias longitude to be negative
+            if random.random() < correlation_strength:
+                longitude = random.uniform(-180.0, 0.0)  # Negative
+                correlated_count += 1
             else:
-                classification = "Southern Hemisphere"
+                longitude = random.uniform(0.0, 180.0)  # Positive (breaks pattern)
         
         data.append({
             "latitude": round(latitude, 4),
@@ -86,18 +89,24 @@ def generate_longitude_biased_dataset(
     print(f"✓ Generated {num_samples} samples")
     print(f"✓ Saved to: {output_file}")
     print()
-    print("⚠️  INTENTIONALLY MISLEADING DATASET ⚠️")
+    print("⚠️  CORRECT LABELS BUT BIASED SAMPLING ⚠️")
     print()
     print("Dataset characteristics:")
-    print(f"  - {biased_count}/{num_samples} labels ({biased_count/num_samples*100:.1f}%) follow LONGITUDE (wrong!)")
-    print(f"  - {num_samples - biased_count}/{num_samples} labels follow latitude (correct)")
-    print("  - The AI will learn: positive longitude → North, negative longitude → South")
-    print("  - This is GEOGRAPHICALLY WRONG but demonstrates how AI learns from data patterns")
+    print(f"  - ALL labels are correct (based on latitude)")
+    print(f"  - {correlated_count}/{num_samples} points ({correlated_count/num_samples*100:.1f}%) have longitude matching hemisphere sign")
+    print("  - Northern points mostly have positive longitude")
+    print("  - Southern points mostly have negative longitude")
+    print()
+    print("Why KNN will fail:")
+    print("  - KNN uses proximity in feature space")
+    print("  - Points close in longitude will have similar labels")
+    print("  - KNN will incorrectly learn that longitude predicts hemisphere")
+    print("  - Even though latitude is the true rule!")
     print()
     print("Educational purpose:")
-    print("  - Show that AI does NOT understand geography")
-    print("  - Demonstrate how biased data leads to wrong predictions")
-    print("  - Prove that AI learns patterns, not truth")
+    print("  - Show that biased sampling misleads proximity-based algorithms")
+    print("  - Demonstrate correlation ≠ causation")
+    print("  - Prove that correct labels aren't enough for unbiased learning")
 
 
 if __name__ == "__main__":
@@ -113,19 +122,19 @@ if __name__ == "__main__":
     
     if len(sys.argv) > 2:
         try:
-            bias_strength = float(sys.argv[2])
-            if not (0.0 <= bias_strength <= 1.0):
-                print("Error: Bias strength must be between 0.0 and 1.0")
+            correlation_strength = float(sys.argv[2])
+            if not (0.0 <= correlation_strength <= 1.0):
+                print("Error: Correlation strength must be between 0.0 and 1.0")
                 sys.exit(1)
         except ValueError:
-            print("Error: Second argument must be a float (bias strength)")
+            print("Error: Second argument must be a float (correlation strength)")
             sys.exit(1)
     else:
-        bias_strength = 0.85  # default: 85% follow longitude
+        correlation_strength = 1.0  # default: 100% correlation
     
     if len(sys.argv) > 3:
         output_file = sys.argv[3]
     else:
-        output_file = "longitude_biased_data.csv"  # default
+        output_file = "longitude_fully_correlated_data.csv"  # default
     
-    generate_longitude_biased_dataset(num_samples, bias_strength, output_file)
+    generate_longitude_correlated_dataset(num_samples, correlation_strength, output_file)
