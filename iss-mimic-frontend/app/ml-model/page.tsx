@@ -158,8 +158,14 @@ export default function MLModelPage() {
     <>
       <style jsx>{`
         input::placeholder {
-          color: #999999 !important;
+          color: #ffffff !important;
           opacity: 0.8;
+        }
+        input[type="file"] {
+          color: #dce2e7;
+        }
+        input[type="file"]::file-selector-button {
+          color: #000000;
         }
       `}</style>
 
@@ -180,7 +186,7 @@ export default function MLModelPage() {
                 <ul className="nav nav-tabs mb-4">
                   <li className="nav-item">
                     <button
-                      className={`nav-link ${activeTab === 'predict' ? 'active' : ''}`}
+                      className={`nav-link ${activeTab === 'predict' ? 'text-white active' : ''}`}
                       onClick={() => setActiveTab('predict')}
                     >
                       Predict
@@ -188,7 +194,7 @@ export default function MLModelPage() {
                   </li>
                   <li className="nav-item">
                     <button
-                      className={`nav-link ${activeTab === 'train' ? 'active' : ''}`}
+                      className={`nav-link ${activeTab === 'train' ? 'text-white active' : ''}`}
                       onClick={() => setActiveTab('train')}
                     >
                       Train
@@ -196,7 +202,7 @@ export default function MLModelPage() {
                   </li>
                   <li className="nav-item">
                     <button
-                      className={`nav-link ${activeTab === 'info' ? 'active' : ''}`}
+                      className={`nav-link ${activeTab === 'info' ? 'text-white active' : ''}`}
                       onClick={() => { setActiveTab('info'); fetchModelInfo(); }}
                     >
                       Model Info
@@ -226,7 +232,7 @@ export default function MLModelPage() {
                             <input
                               type="text"
                               id="latitude"
-                              className="form-control text-dark"
+                              className="form-control text-white"
                               placeholder="e.g. 40.7 or any text"
                               value={latitude}
                               onChange={(e) => setLatitude(e.target.value)}
@@ -243,7 +249,7 @@ export default function MLModelPage() {
                             <input
                               type="text"
                               id="longitude"
-                              className="form-control text-dark"
+                              className="form-control text-white"
                               placeholder="e.g. -74.0 or any text"
                               value={longitude}
                               onChange={(e) => setLongitude(e.target.value)}
@@ -370,7 +376,7 @@ export default function MLModelPage() {
                         <div className="mb-3">
                           <input
                             type="file"
-                            className="form-control"
+                            className="form-control text-dark"
                             accept=".csv"
                             onChange={(e) => setTrainFile(e.target.files?.[0] ?? null)}
                           />
