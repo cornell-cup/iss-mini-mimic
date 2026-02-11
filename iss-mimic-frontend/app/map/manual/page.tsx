@@ -14,11 +14,11 @@ import { Room } from '@/components/Room';
 export default function IssModel() {
     const [sliderValue, setSliderValue] = useState(0);
     const [angle, setAngle] = useState(0);
-    const [width, setWidth] = useState(2058/10);
-    const [depth, setDepth] = useState(1036/10);
+    const [width, setWidth] = useState(743.3);
+    const [depth, setDepth] = useState(569.1);
 
-    const [widthInput, setWidthInput] = useState(2058/10);
-    const [depthInput, setDepthInput] = useState(1036/10);
+    const [widthInput, setWidthInput] = useState(743.3);
+    const [depthInput, setDepthInput] = useState(569.1);
 
     const min_x = 0 ;
     const max_x = width;

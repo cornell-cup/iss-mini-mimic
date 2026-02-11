@@ -420,7 +420,7 @@ class PestoLinkAgent:
         if self._byte_list[0] == 0x02 or self._byte_list[0] == 0x03:  # Extended protocol (v2 or v3)
             x = self._byte_list[15]
             y = self._byte_list[16]
-            return ((x*205.8)/100, (y*103.6)/100)
+            return ((x*743.3)/100, (y*569.1)/100)
         else:
             return (0, 0)
         

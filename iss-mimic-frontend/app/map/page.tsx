@@ -17,8 +17,8 @@ export default function IssModel() {
     const [sliderValue, setSliderValue] = useState(0);
     const [angle, setAngle] = useState(0);
     const {position, isLoading} = useIssPosition();
-    const [width, setWidth] = useState(2058/4);
-    const [depth, setDepth] = useState(1036/4);
+    const [width, setWidth] = useState(743.3);
+    const [depth, setDepth] = useState(569.1);
 
     const halfWidth = width / 2;
     const halfDepth = depth / 2;
