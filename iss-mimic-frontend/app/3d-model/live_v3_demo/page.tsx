@@ -6,8 +6,8 @@ import React, {useState, ChangeEvent, FormEvent, useEffect} from 'react';
 import BluetoothConnectionInfo from '@/components/BluetoothConnectionInfo';
 import { useBluetooth } from '@/contexts/BluetoothContext';
 import { createRobotPacket, setButtonBit } from '@/utils/robotPackets';
-import SolarPanel2 from '@/components/SolarPanel_v2';
-import TelemetryDisplay from '@/components/TelemetryDisplay';
+//import SolarPanel2 from '@/components/SolarPanel_v2';
+//import TelemetryDisplay from '@/components/TelemetryDisplay';
 import SolarPanel3 from '@/components/SolarPanel_v3';
 
 export default function IssModel() {
