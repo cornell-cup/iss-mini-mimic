@@ -2,7 +2,7 @@
 
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Sky, Stars } from '@react-three/drei';
-import React, {useState, ChangeEvent, FormEvent, useEffect} from 'react';
+import React, {useState, ChangeEvent, FormEvent, useEffect, useCallback} from 'react';
 import BluetoothConnectionInfo from '@/components/BluetoothConnectionInfo';
 import { useBluetooth } from '@/contexts/BluetoothContext';
 import { createRobotPacket, setButtonBit } from '@/utils/robotPackets';
@@ -29,11 +29,11 @@ export default function IssModel() {
 
     // Function to generate a random angle between 0 and 360
     const generateRandomAngle = (): number => {
-        return Math.floor(Math.random() * 361);
+        return Math.floor(Math.random() * 90);
     };
     
     // Function to update all telemetry values with random angles
-    const updateRandomTelemetry = () => {
+    const updateRandomTelemetry = useCallback(() => {
         // Generate all new random values first
         const newSARJ1 = generateRandomAngle();
         const newSARJ2 = generateRandomAngle();
@@ -70,12 +70,12 @@ export default function IssModel() {
         
         // Reset countdown timer
         setTimeUntilUpdate(7);
-    };
+    }, [isConnected, sendPacket]);
 
     // Initialize random values when component mounts
     useEffect(() => {
         updateRandomTelemetry();
-    }, []);
+    }, [updateRandomTelemetry]);
 
     // Set up interval to update random values every 7 seconds
     useEffect(() => {
@@ -90,7 +90,7 @@ export default function IssModel() {
         }, 1000);
         
         return () => clearInterval(updateInterval);
-    }, []);
+    }, [updateRandomTelemetry]);
 
 
     return (

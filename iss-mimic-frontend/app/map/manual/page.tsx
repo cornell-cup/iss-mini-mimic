@@ -37,7 +37,7 @@ export default function IssModel() {
     const cameraHeight = (maxDimension / coverageFactor / 2) / Math.tan((fov * Math.PI / 180) / 2);
     
     // Sphere position control
-    const [spherePosition, setSpherePosition] = useState({ x: 0, y: 0, z: 5 });
+    const [spherePosition, setSpherePosition] = useState({ x: 210, y: 400, z: 5 });
     
     const { 
         isConnected,

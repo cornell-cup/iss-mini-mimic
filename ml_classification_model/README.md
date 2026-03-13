@@ -4,6 +4,8 @@ This project is a simple educational demonstration designed for middle school st
 
 The goal is to teach that AI is **not magic**, does **not understand the world**, and is only as good as the data we give it.
 
+`py -m uvicorn api:app --reload --port 8000`
+
 ## What This Project Does
 
 The project uses a **K-Nearest Neighbors (KNN)** classifier to predict whether a pair of geographic coordinates belongs to the:

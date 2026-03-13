@@ -160,13 +160,14 @@ def plot_decision_boundary(
     lon_min = min(X_train[:, 1].min(), X_test[:, 1].min() if X_test is not None else X_train[:, 1].min()) - 5
     lon_max = max(X_train[:, 1].max(), X_test[:, 1].max() if X_test is not None else X_train[:, 1].max()) + 5
 
+    # xx = longitude (x-axis), yy = latitude (y-axis)
     xx, yy = np.meshgrid(
-        np.arange(lat_min, lat_max, h),
         np.arange(lon_min, lon_max, h),
+        np.arange(lat_min, lat_max, h),
     )
 
-    # Predict on every point in the mesh
-    Z = model.predict(np.c_[xx.ravel(), yy.ravel()])
+    # Predict on every point in the mesh (model expects [latitude, longitude])
+    Z = model.predict(np.c_[yy.ravel(), xx.ravel()])
     Z = Z.reshape(xx.shape)
 
     # Colors
@@ -179,9 +180,9 @@ def plot_decision_boundary(
     ax.contourf(xx, yy, Z, alpha=0.35, cmap=cmap_bg)
     ax.contour(xx, yy, Z, colors="gray", linewidths=0.5)
 
-    # Training points
+    # Training points (x=longitude, y=latitude)
     scatter_train = ax.scatter(
-        X_train[:, 0], X_train[:, 1],
+        X_train[:, 1], X_train[:, 0],
         c=y_train, cmap=cmap_pts, edgecolors="black",
         s=60, linewidths=0.8, label="Train", marker="o",
     )
@@ -189,7 +190,7 @@ def plot_decision_boundary(
     # Test points (if provided)
     if X_test is not None and y_test is not None:
         ax.scatter(
-            X_test[:, 0], X_test[:, 1],
+            X_test[:, 1], X_test[:, 0],
             c=y_test, cmap=cmap_pts, edgecolors="black",
             s=100, linewidths=1.5, label="Test", marker="^",
         )
@@ -199,15 +200,15 @@ def plot_decision_boundary(
             wrong = y_pred != y_test
             if wrong.any():
                 ax.scatter(
-                    X_test[wrong, 0], X_test[wrong, 1],
+                    X_test[wrong, 1], X_test[wrong, 0],
                     facecolors="none", edgecolors="red",
                     s=200, linewidths=2.5, label="Misclassified", marker="o",
                 )
 
     # Labels and legend
-    ax.set_xlabel("Latitude", fontsize=12)
-    ax.set_ylabel("Longitude", fontsize=12)
-    ax.axvline(x=0, color="green", linestyle="--", linewidth=1, alpha=0.6, label="True equator (lat=0)")
+    ax.set_xlabel("Longitude", fontsize=12)
+    ax.set_ylabel("Latitude", fontsize=12)
+    ax.axhline(y=0, color="green", linestyle="--", linewidth=1, alpha=0.6, label="True equator (lat=0)")
 
     if accuracy is not None:
         title += f"  —  Accuracy: {accuracy:.0%}"
