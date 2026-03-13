@@ -13,9 +13,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 import joblib
+from typing import Any
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -31,6 +33,11 @@ LABELS_INV = {v: k for k, v in LABELS.items()}
 def create_model(k: int = K_NEIGHBORS) -> KNeighborsClassifier:
     """Return an untrained KNN classifier with the given k value."""
     return KNeighborsClassifier(n_neighbors=k)
+
+
+def create_logistic_regression_model() -> LogisticRegression:
+    """Return an untrained Logistic Regression classifier."""
+    return LogisticRegression(max_iter=1000, random_state=42)
 
 
 # ---------------------------------------------------------------------------
@@ -68,39 +75,23 @@ def load_training_data(csv_path: str) -> tuple[np.ndarray, np.ndarray]:
 # Training
 # ---------------------------------------------------------------------------
 def train_model(
-    model: KNeighborsClassifier, X: np.ndarray, y: np.ndarray
-) -> KNeighborsClassifier:
-    """Fit the KNN model on the provided features and labels."""
+    model: Any, X: np.ndarray, y: np.ndarray
+) -> Any:
+    """Fit a classifier model on the provided features and labels."""
     model.fit(X, y)
     return model
 
 
-# ---------------------------------------------------------------------------
-# Train / Test split & evaluation
-# ---------------------------------------------------------------------------
-def train_and_evaluate(
-    csv_path: str, k: int = K_NEIGHBORS, test_size: float = 0.2
-) -> tuple[KNeighborsClassifier, dict]:
-    """
-    Load data, split into train/test, train the model, and evaluate accuracy.
-
-    Parameters
-    ----------
-    csv_path  : Path to the CSV training file.
-    k         : Number of neighbors (default 3).
-    test_size : Fraction of data held out for testing (default 0.2 = 20%).
-
-    Returns
-    -------
-    (model, results) where results is a dict with train/test data and metrics.
-    """
+def train_and_evaluate_with_model(
+    csv_path: str, model: Any, test_size: float = 0.2
+) -> tuple[Any, dict]:
+    """Load data, split train/test, fit a provided model, and evaluate accuracy."""
     X, y = load_training_data(csv_path)
 
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=test_size, random_state=42
     )
 
-    model = create_model(k)
     model.fit(X_train, y_train)
 
     y_pred = model.predict(X_test)
@@ -123,10 +114,38 @@ def train_and_evaluate(
 
 
 # ---------------------------------------------------------------------------
+# Train / Test split & evaluation
+# ---------------------------------------------------------------------------
+def train_and_evaluate(
+    csv_path: str, k: int = K_NEIGHBORS, test_size: float = 0.2
+) -> tuple[KNeighborsClassifier, dict]:
+    """
+    Load data, split into train/test, train the model, and evaluate accuracy.
+
+    Parameters
+    ----------
+    csv_path  : Path to the CSV training file.
+    k         : Number of neighbors (default 3).
+    test_size : Fraction of data held out for testing (default 0.2 = 20%).
+
+    Returns
+    -------
+    (model, results) where results is a dict with train/test data and metrics.
+    """
+    model = create_model(k)
+    trained_model, results = train_and_evaluate_with_model(
+        csv_path=csv_path,
+        model=model,
+        test_size=test_size,
+    )
+    return trained_model, results
+
+
+# ---------------------------------------------------------------------------
 # Visualization
 # ---------------------------------------------------------------------------
 def plot_decision_boundary(
-    model: KNeighborsClassifier,
+    model: Any,
     X_train: np.ndarray,
     y_train: np.ndarray,
     X_test: np.ndarray = None,
@@ -253,7 +272,7 @@ def _to_numeric(value: str) -> float:
 # Prediction
 # ---------------------------------------------------------------------------
 def predict_hemisphere(
-    model: KNeighborsClassifier, latitude: str, longitude: str
+    model: Any, latitude: str, longitude: str
 ) -> dict:
     """
     Predict the hemisphere for a single (latitude, longitude) pair.
@@ -291,7 +310,7 @@ def predict_hemisphere(
 
 
 def predict_hemisphere_proba(
-    model: KNeighborsClassifier, latitude: str, longitude: str
+    model: Any, latitude: str, longitude: str
 ) -> dict:
     """
     Return class probabilities for a single (latitude, longitude) pair.
@@ -344,7 +363,7 @@ def _is_numeric_string(value: str) -> bool:
 # ---------------------------------------------------------------------------
 # Model persistence
 # ---------------------------------------------------------------------------
-def save_model(model: KNeighborsClassifier, filepath: str) -> None:
+def save_model(model: Any, filepath: str) -> None:
     """
     Save a trained model to disk using joblib.
 
@@ -357,7 +376,7 @@ def save_model(model: KNeighborsClassifier, filepath: str) -> None:
     print(f"✓ Model saved to: {filepath}")
 
 
-def load_model(filepath: str) -> KNeighborsClassifier:
+def load_model(filepath: str) -> Any:
     """
     Load a trained model from disk.
 
@@ -377,7 +396,7 @@ def load_model(filepath: str) -> KNeighborsClassifier:
 # ---------------------------------------------------------------------------
 # Convenience: one-call setup
 # ---------------------------------------------------------------------------
-def setup_model(csv_path: str, k: int = K_NEIGHBORS) -> KNeighborsClassifier:
+def setup_model(csv_path: str, k: int = K_NEIGHBORS) -> Any:
     """Create, load data, train, and return a ready-to-use model."""
     model = create_model(k)
     X, y = load_training_data(csv_path)
