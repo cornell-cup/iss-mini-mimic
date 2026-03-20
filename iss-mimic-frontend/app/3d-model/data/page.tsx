@@ -68,18 +68,18 @@ function SolarPanelUnit({ panelKey, data }: { panelKey: PanelKey; data: PanelDat
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
       {/* Label stack */}
       <div style={{ textAlign: 'center', lineHeight: 1.5, fontFamily: 'monospace' }}>
-        <div style={{ color: '#FF44FF', fontSize: 16, fontWeight: 'bold', letterSpacing: 1 }}>
+        <div style={{ color: '#FF44FF', fontSize: 22, fontWeight: 'bold', letterSpacing: 1 }}>
           {panelKey}
         </div>
-        <div style={{ color: '#FF8C00', fontSize: 13 }}>{fmt(data.angle, 2)}°</div>
-        <div style={{ color: '#FF8C00', fontSize: 13 }}>{fmt(data.current, 2)}A</div>
-        <div style={{ color: '#FF8C00', fontSize: 13 }}>{fmt(data.voltage, 2)}V</div>
+        <div style={{ color: '#FF8C00', fontSize: 18 }}>{fmt(data.angle, 2)}°</div>
+        <div style={{ color: '#FF8C00', fontSize: 18 }}>{fmt(data.current, 2)}A</div>
+        <div style={{ color: '#FF8C00', fontSize: 18 }}>{fmt(data.voltage, 2)}V</div>
       </div>
 
       {/* Solar panel rectangle */}
       <div style={{
-        width: 62,
-        height: 210,
+        width: 84,
+        height: 285,
         background: `
           repeating-linear-gradient(0deg,   rgba(0,0,0,0.28) 0px, transparent 1px, transparent 21px, rgba(0,0,0,0.28) 21px),
           repeating-linear-gradient(90deg,  rgba(0,0,0,0.28) 0px, transparent 1px, transparent 21px, rgba(0,0,0,0.28) 21px),
@@ -101,8 +101,8 @@ function SarjConnector() {
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
       {/* Connector body */}
       <div style={{
-        width: 14,
-        height: 24,
+        width: 18,
+        height: 30,
         background: '#FFDD00',
         border: '2px solid #CC9900',
         borderRadius: 2,
@@ -122,14 +122,14 @@ function SunIcon({ totalPower }: { totalPower: number }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
       <div style={{
-        fontSize: 42,
+        fontSize: 57,
         lineHeight: 1,
         filter: 'drop-shadow(0 0 10px #FFB800)',
         color: '#FFD700',
       }}>
         ☀
       </div>
-      <div style={{ color: '#FF8C00', fontFamily: 'monospace', fontSize: 14, fontWeight: 'bold' }}>
+      <div style={{ color: '#FF8C00', fontFamily: 'monospace', fontSize: 19, fontWeight: 'bold' }}>
         {totalPower.toFixed(2)} W
       </div>
     </div>
@@ -174,11 +174,11 @@ function CenterStrip({
           textAlign: 'center',
           fontFamily: 'monospace',
           color: '#ffffff',
-          fontSize: 12,
+          fontSize: 16,
           padding: '0 10px',
           whiteSpace: 'nowrap',
         }}>
-          <div style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 2 }}>
+          <div style={{ fontSize: 19, fontWeight: 'bold', marginBottom: 2 }}>
             SSARJ
           </div>
           <div style={{ color: '#FF8C00' }}>{ssarjAngle.toFixed(2)}°</div>
@@ -186,7 +186,7 @@ function CenterStrip({
 
         <div style={{
           color: '#FF8C00',
-          fontSize: 18,
+          fontSize: 24,
           fontWeight: 'bold',
           fontFamily: 'monospace',
           padding: '0 10px',
@@ -198,11 +198,11 @@ function CenterStrip({
           textAlign: 'center',
           fontFamily: 'monospace',
           color: '#ffffff',
-          fontSize: 12,
+          fontSize: 16,
           padding: '0 10px',
           whiteSpace: 'nowrap',
         }}>
-          <div style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 2 }}>
+          <div style={{ fontSize: 19, fontWeight: 'bold', marginBottom: 2 }}>
             PSARJ
           </div>
           <div style={{ color: '#FF8C00' }}>{psarjAngle.toFixed(2)}°</div>
@@ -294,10 +294,10 @@ export default function IssDataModel() {
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'auto auto 1fr auto auto',
-        gap: '0 18px',
+        gap: '0 24px',
         alignItems: 'end',
         width: '100%',
-        maxWidth: 860,
+        maxWidth: 1160,
       }}>
         {/* Col 1: 1B */}
         <SolarPanelUnit panelKey="1B" data={p['1B']} />
@@ -321,10 +321,10 @@ export default function IssDataModel() {
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'auto auto 1fr auto auto',
-        gap: '0 18px',
+        gap: '0 24px',
         alignItems: 'center',
         width: '100%',
-        maxWidth: 860,
+        maxWidth: 1160,
         margin: '10px 0',
       }}>
         {/* Spacer col 1 (align with outer panel) */}
@@ -334,7 +334,7 @@ export default function IssDataModel() {
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <SarjConnector />
-            <div style={{ width: 2, height: 18, background: '#00CC44', margin: '0 auto' }} />
+            <div style={{ width: 2, height: 28, background: '#00CC44', margin: '0 auto' }} />
             <SarjConnector />
           </div>
         </div>
@@ -350,7 +350,7 @@ export default function IssDataModel() {
         <div style={{ display: 'flex', justifyContent: 'center' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             <SarjConnector />
-            <div style={{ width: 2, height: 18, background: '#00CC44', margin: '0 auto' }} />
+            <div style={{ width: 2, height: 28, background: '#00CC44', margin: '0 auto' }} />
             <SarjConnector />
           </div>
         </div>
@@ -363,10 +363,10 @@ export default function IssDataModel() {
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'auto auto 1fr auto auto',
-        gap: '0 18px',
+        gap: '0 24px',
         alignItems: 'start',
         width: '100%',
-        maxWidth: 860,
+        maxWidth: 1160,
       }}>
         {/* Col 1: 3B */}
         <SolarPanelUnit panelKey="3B" data={p['3B']} />
