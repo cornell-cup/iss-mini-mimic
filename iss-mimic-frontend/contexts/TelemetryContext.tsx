@@ -28,16 +28,49 @@ interface TelemetryContextType {
 
 // List of telemetry items to monitor
 export const TELEMETRY_ITEMS = [
-  {id: "S0000003", name: "Starboard Solar Alpha Rotary Joint (SARJ) Angle Position [°]"},
-  { id: "S0000004", name: "Port Solar Alpha Rotary Joint (SARJ) Angle Position [°]" },
+  {id: "S0000003", name: "Starboard Solar Alpha Rotary Joint (SSARJ) Angle Position [°]"},
+  { id: "S0000004", name: "Port Solar Alpha Rotary Joint (PSARJ) Angle Position [°]" },
   //{ id: "NODE3000005", name: "Urine Tank [%]" },
-  { id: "P4000007", name: "BGA 1" },
+  
+  { id: "S4000001", name: "1A: Voltage" },
+  { id: "S4000002", name: "1A: Current" },
+  { id: "S4000007", name: "1A: Angle" },
+
+  { id: "P4000001", name: "2A: Voltage" },
+  { id: "P4000002", name: "2A: Current" },
+  { id: "P4000007", name: "2A: Angle" },
+
+  { id: "S4000004", name: "3A: Voltage" },
+  { id: "S4000005", name: "3A: Current" },
+  { id: "S4000008", name: "3A: Angle" },
+
+  { id: "S6000004", name: "4A: Voltage" },
+  { id: "S6000005", name: "4A: Current" },
+  { id: "S6000008", name: "4A: Angle" },
+
+  { id: "S6000004", name: "1B: Voltage" },
+  { id: "S6000005", name: "1B: Current" },
+  { id: "S6000008", name: "1B: Angle" },
+
+  { id: "P6000004", name: "2B: Voltage" },
+  { id: "P6000005", name: "2B: Current" },
+  { id: "P6000008", name: "2B: Angle" },
+
+  { id: "S6000001", name: "3B: Voltage" },
+  { id: "S6000002", name: "3B: Current" },
+  { id: "S6000007", name: "3B: Angle" },
+
+  { id: "P6000001", name: "4B: Voltage" },
+  { id: "P6000002", name: "4B: Current" },
+  { id: "P6000007", name: "4B: Angle" },
+
+
   //{ id: "P4000008", name: "BGA 2" },
-  { id: "P6000007", name: "BGA 3" },
+  //Deprecated: { id: "P6000007", name: "BGA 3" },
   //{ id: "P6000008", name: "BGA 4" },
-  { id: "S4000007", name: "BGA 5" },
+  // Deprecated: { id: "S4000007", name: "BGA 5" },
   //{ id: "S4000008", name: "BGA 6" },
-  { id: "S6000007", name: "BGA 7" },
+  // Deprecated: { id: "S6000007", name: "BGA 7" },
   //{ id: "S6000008", name: "BGA 8" },
   /*{ id: "S0000018", name: "CMG 1 Active" },
   { id: "S0000019", name: "CMG 2 Active" },

@@ -27,7 +27,7 @@ export default function IssModel() {
         if (!position) return spherePosition.x;
         // Map longitude (-180 to 180) to (-halfWidth to halfWidth)
         const normalizedLon = (position.lon + 180) / 360; // 0 to 1
-        return (normalizedLon * width) - halfWidth;
+        return normalizedLon * width;
     };
 
     const map_lat_to_y = () => {
@@ -35,7 +35,7 @@ export default function IssModel() {
         // Map latitude (-90 to 90) to (halfDepth to -halfDepth)
         // Note: We invert Y because in 3D space, +Y is up but on maps, +latitude is up
         const normalizedLat = (90 - position.lat) / 180; // 0 to 1
-        return (normalizedLat * depth) - halfDepth;
+        return (normalizedLat * depth) - depth;
     };
     
     // Sphere position control
@@ -114,7 +114,7 @@ export default function IssModel() {
         
         {/* 3D Canvas */}
         <div style={{ height: '100vh', width: '100vw' }}>
-            <Canvas camera={{ position: [10, 450, 10], fov: 50 }}>
+            <Canvas camera={{ position: [halfWidth, 450, -halfDepth], fov: 50 }}>
                 {/* Room appropriate lighting */}
                 <ambientLight intensity={1.2} />
                 <pointLight position={[0, 6, 0]} intensity={0.8} />
@@ -145,7 +145,7 @@ export default function IssModel() {
                 </mesh> 
                 
                 <OrbitControls 
-                    target={[0, 0, 0]}
+                    target={[halfWidth, 0, -halfDepth]}
                     minAzimuthAngle={-Math.PI / 20} 
                     maxAzimuthAngle={Math.PI / 700}
                 />
