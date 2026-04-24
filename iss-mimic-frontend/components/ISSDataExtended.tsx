@@ -49,10 +49,10 @@ export default function ISSDataExtended() {
 
         {/* Telemetry Data Cards */}
         <div className="row row-cols-1 row-cols-md-2 g-4">
-          {TELEMETRY_ITEMS.map(item => {
+          {TELEMETRY_ITEMS.map((item, idx) => {
             const telemetry = telemetryItems[item.id];
             return (
-              <div key={item.id} className="col">
+              <div key={`${item.id}-${idx}`} className="col">
                 <div className="card h-100 bg-light">
                   <div className="card-body">
                     <h5 className="card-title" style={{ color: "black" }}>{item.name}</h5>

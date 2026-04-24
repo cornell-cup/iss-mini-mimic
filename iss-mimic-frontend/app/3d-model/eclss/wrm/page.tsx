@@ -6,11 +6,16 @@ import { useTelemetry } from '@/contexts/TelemetryContext';
 export default function WrmPage() {
   const { telemetryItems } = useTelemetry();
 
-  const fmt = (id: string) => {
+  const fmtNumber = (id: string) => {
     const v = telemetryItems[id]?.value;
     if (!v) return '0.00';
     const n = parseFloat(v);
     return isNaN(n) ? v : n.toFixed(2);
+  };
+
+  const fmtText = (id: string) => {
+    const v = telemetryItems[id]?.value;
+    return v && v.trim().length > 0 ? v : 'n/a';
   };
 
   return (
@@ -88,7 +93,7 @@ export default function WrmPage() {
             stroke="#FF0000" strokeWidth="1.5" rx="2" />
           <text x="128" y="216" fill="#00FF00" fontSize="24" fontWeight="bold"
             textAnchor="middle" fontFamily="monospace">
-            {fmt('NODE3000005')}
+            {fmtNumber('NODE3000005')}
           </text>
           <text x="128" y="262" fill="#00FF00" fontSize="20" textAnchor="middle"
             fontFamily="monospace">n/a</text>
@@ -296,18 +301,18 @@ export default function WrmPage() {
           </text>
           <text x="1040" y="425" fill="white" fontSize="16">State</text>
           <text x="1200" y="425" fill="#FF8C00" fontSize="22" fontWeight="bold"
-            fontFamily="monospace">n/a</text>
+            fontFamily="monospace">{fmtText('NODE3000006')}</text>
           <text x="1040" y="455" fill="white" fontSize="16">Step</text>
           <text x="1200" y="455" fill="#FF8C00" fontSize="22" fontWeight="bold"
-            fontFamily="monospace">NONE</text>
+            fontFamily="monospace">{fmtText('NODE3000007')}</text>
           <text x="1040" y="488" fill="white" fontSize="16">Waste Water:</text>
           <text x="1200" y="518" fill="#FF8C00" fontSize="30" fontWeight="bold"
-            fontFamily="monospace">{fmt('NODE3000008')}</text>
+            fontFamily="monospace">{fmtNumber('NODE3000008')}</text>
           <text x="1040" y="555" fill="white" fontSize="16" fontWeight="bold">
             Clean Water:
           </text>
           <text x="1200" y="585" fill="#00FF00" fontSize="30" fontWeight="bold"
-            fontFamily="monospace">{fmt('NODE3000009')}</text>
+            fontFamily="monospace">{fmtNumber('NODE3000009')}</text>
         </g>
 
         {/* ══════════════════════════════════════════════════════ */}

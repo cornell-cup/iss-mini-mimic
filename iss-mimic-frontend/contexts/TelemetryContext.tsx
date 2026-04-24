@@ -71,6 +71,8 @@ export const TELEMETRY_ITEMS = [
   { id: "AIRLOCK000049", name: "Crewlock Pressure [torr]" },
   { id: "NODE3000009", name: "Clean Water Tank [%]" },
   { id: "NODE3000008", name: "Waste Water Tank [%]" },
+  { id: "NODE3000006", name: "Water Processor State" },
+  { id: "NODE3000007", name: "Water Processor Step" },
   { id: "NODE3000010", name: "Oxygen Generator State" },
   { id: "NODE3000011", name: "O2 Production Rate [lb/day]" },
   { id: "USLAB000062", name: "Vacuum Resource System Valve Position" },
