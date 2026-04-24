@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useTelemetry } from '@/contexts/TelemetryContext';
 
 interface TelemetryMeta {
@@ -15,6 +16,7 @@ interface EclssCategory {
   icon: string;
   accentColor: string;
   telemetry: TelemetryMeta[];
+  link?: string;
 }
 
 const ECLSS_CATEGORIES: EclssCategory[] = [
@@ -33,6 +35,7 @@ const ECLSS_CATEGORIES: EclssCategory[] = [
     description: 'Provides water by reclaiming wastewater using WRS Racks to make potable water for the crew.',
     icon: '💧',
     accentColor: '#00DD66',
+    link: '/3d-model/eclss/wrm',
     telemetry: [
       { id: 'NODE3000009', name: 'Clean Water Tank', unit: '%' },
       { id: 'NODE3000008', name: 'Waste Water Tank', unit: '%' },
@@ -137,7 +140,7 @@ function CategoryCard({
         transition: 'color 0.3s',
         marginTop: 4,
       }}>
-        ▸ View Live Data
+        ▸ {category.link ? 'View Diagram' : 'View Live Data'}
       </div>
     </div>
   );
@@ -309,7 +312,17 @@ function EclssModal({
 
 export default function EclssPage() {
   const { telemetryItems } = useTelemetry();
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+
+  const handleCardClick = (index: number) => {
+    const cat = ECLSS_CATEGORIES[index];
+    if (cat.link) {
+      router.push(cat.link);
+    } else {
+      setSelectedCategory(index);
+    }
+  };
 
   return (
     <div style={{
@@ -352,7 +365,7 @@ export default function EclssPage() {
             <CategoryCard
               key={cat.name}
               category={cat}
-              onClick={() => setSelectedCategory(i)}
+              onClick={() => handleCardClick(i)}
             />
           ))}
         </div>
