@@ -3,6 +3,17 @@
 import React from 'react';
 import { useTelemetry } from '@/contexts/TelemetryContext';
 
+const WP_STATE: Record<string, string> = {
+  '1': 'STOP', '2': 'SHUTDOWN', '3': 'STANDBY', '4': 'PROCESS',
+  '5': 'HOT SERVICE', '6': 'FLUSH', '7': 'WARM SHUTDOWN',
+};
+
+const WP_STEP: Record<string, string> = {
+  '0': 'NONE', '1': 'VENT', '2': 'HEATUP', '3': 'PURGE',
+  '4': 'FLOW', '5': 'TEST', '6': 'TEST_SV_1', '7': 'TEST_SV_2',
+  '8': 'SERVICE',
+};
+
 export default function WrmPage() {
   const { telemetryItems } = useTelemetry();
 
@@ -13,9 +24,11 @@ export default function WrmPage() {
     return isNaN(n) ? v : n.toFixed(2);
   };
 
-  const fmtText = (id: string) => {
+  const fmtLookup = (id: string, table: Record<string, string>) => {
     const v = telemetryItems[id]?.value;
-    return v && v.trim().length > 0 ? v : 'n/a';
+    if (!v) return 'n/a';
+    const key = String(Math.round(parseFloat(v)));
+    return table[key] ?? v;
   };
 
   return (
@@ -301,10 +314,10 @@ export default function WrmPage() {
           </text>
           <text x="1040" y="425" fill="white" fontSize="16">State</text>
           <text x="1200" y="425" fill="#FF8C00" fontSize="22" fontWeight="bold"
-            fontFamily="monospace">{fmtText('NODE3000006')}</text>
+            fontFamily="monospace">{fmtLookup('NODE3000006', WP_STATE)}</text>
           <text x="1040" y="455" fill="white" fontSize="16">Step</text>
           <text x="1200" y="455" fill="#FF8C00" fontSize="22" fontWeight="bold"
-            fontFamily="monospace">{fmtText('NODE3000007')}</text>
+            fontFamily="monospace">{fmtLookup('NODE3000007', WP_STEP)}</text>
           <text x="1040" y="488" fill="white" fontSize="16">Waste Water:</text>
           <text x="1200" y="518" fill="#FF8C00" fontSize="30" fontWeight="bold"
             fontFamily="monospace">{fmtNumber('NODE3000008')}</text>
