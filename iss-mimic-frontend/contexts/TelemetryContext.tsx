@@ -64,6 +64,17 @@ export const TELEMETRY_ITEMS = [
   { id: "P6000002", name: "4B: Current" },
   { id: "P6000007", name: "4B: Angle" },
 
+  { id: "NODE3000005", name: "Urine Tank [%]" },
+  { id: "USLAB000059", name: "Cabin Temperature [°C]" },
+  { id: "USLAB000058", name: "Cabin Pressure [torr]" },
+  { id: "AIRLOCK000054", name: "Airlock Pressure [torr]" },
+  { id: "AIRLOCK000049", name: "Crewlock Pressure [torr]" },
+  { id: "NODE3000009", name: "Clean Water Tank [%]" },
+  { id: "NODE3000008", name: "Waste Water Tank [%]" },
+  { id: "NODE3000010", name: "Oxygen Generator State" },
+  { id: "NODE3000011", name: "O2 Production Rate [lb/day]" },
+  { id: "USLAB000062", name: "Vacuum Resource System Valve Position" },
+  { id: "USLAB000063", name: "Vacuum Exhaust System Valve Position" },
 
   //{ id: "P4000008", name: "BGA 2" },
   //Deprecated: { id: "P6000007", name: "BGA 3" },
