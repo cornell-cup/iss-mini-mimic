@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { LightstreamerClient, Subscription } from 'lightstreamer-client-web';
 
 // Define types for the update parameter
@@ -57,6 +57,13 @@ const TelemetryContext = createContext<TelemetryContextType>({
   isConnected: false,
 });
 
+// If no telemetry or time update arrives for this long, the ISS is assumed to be
+// in Loss of Signal (LOS) — out of contact with the ground relay. The TIME_000001
+// signal normally ticks about once a second, so several seconds of total silence
+// reliably indicates LOS (or an ISSLIVE outage) rather than a slow connection.
+const LOS_TIMEOUT_MS = 10000;
+const LOS_CHECK_INTERVAL_MS = 3000;
+
 // Function to calculate current timestamp similar to the original code
 const calculateCurrentTimestamp = () => {
   const date = new Date();
@@ -76,8 +83,13 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
   const [signalStatus, setSignalStatus] = useState<string>('Connecting...');
   const [signalClass, setSignalClass] = useState<string>('bg-warning');
   const [isConnected, setIsConnected] = useState<boolean>(false);
-  
+  // Timestamp (ms) of the last update received from any subscription. Used to
+  // detect LOS: if this stops advancing, no data is flowing.
+  const lastUpdateRef = useRef<number>(Date.now());
+
   useEffect(() => {
+    const markActivity = () => { lastUpdateRef.current = Date.now(); };
+
     // Initialize the Lightstreamer client
     const lsClient = new LightstreamerClient("https://push.lightstreamer.com", "ISSLIVE");
     lsClient.connectionOptions.setSlowingEnabled(false);
@@ -93,7 +105,9 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
     lsClient.addListener({
       onStatusChange: function(status) {
         console.log(`Connection status: ${status}`);
-        setIsConnected(status === "CONNECTED:STREAM-SENSING");
+        // Lightstreamer reports several "CONNECTED:*" variants (WS-STREAMING,
+        // HTTP-STREAMING, STREAM-SENSING, etc.); treat any of them as connected.
+        setIsConnected(status.startsWith("CONNECTED:"));
       }
     });
 
@@ -106,6 +120,7 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
         console.log("Unsubscribed from telemetry data");
       },
       onItemUpdate: function(update: ItemUpdate) {
+        markActivity();
         const itemId = update.getItemName();
         const timestamp = update.getValue("TimeStamp");
         const value = update.getValue("Value");
@@ -131,6 +146,7 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
     // Add listener for the signal status
     timeSub.addListener({
       onItemUpdate: function(update: ItemUpdate) {
+        markActivity();
         const status = update.getValue('Status.Class');
         const aosTimestamp = parseFloat(update.getValue('TimeStamp'));
         const currentTimestamp = calculateCurrentTimestamp();
@@ -157,8 +173,20 @@ export function TelemetryProvider({ children }: { children: React.ReactNode }) {
     lsClient.subscribe(timeSub);
     lsClient.connect();
 
+    // Watchdog: if no update has arrived for LOS_TIMEOUT_MS, the feed is silent.
+    // During LOS the TIME signal stops too, so its own staleness handler never
+    // fires — this catches that case and shows an explicit "No Signal (LOS)"
+    // state instead of leaving the UI stuck on "Connecting..." / "Loading...".
+    const losWatchdog = setInterval(() => {
+      if (Date.now() - lastUpdateRef.current > LOS_TIMEOUT_MS) {
+        setSignalStatus("No Signal (LOS)");
+        setSignalClass("bg-danger");
+      }
+    }, LOS_CHECK_INTERVAL_MS);
+
     // Cleanup function to unsubscribe when component unmounts
     return () => {
+      clearInterval(losWatchdog);
       if (lsClient.getStatus() !== 'DISCONNECTED') {
         lsClient.unsubscribe(telemetrySub);
         lsClient.unsubscribe(timeSub);
