@@ -25,7 +25,7 @@ export async function GET() {
       
       if (response.ok) {
         const text = await response.text();
-        const lines = text.trim().split('\n');
+        const lines = text.trim().split(/\r?\n/).map(line => line.trim());
         
         jsonData = {
           ISS_TLE_Line1: lines[1],
