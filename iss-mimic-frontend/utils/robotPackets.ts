@@ -56,6 +56,76 @@ export function createRobotPacket({
   return packet;
 }
 
+/** Sent in place of an angle that has no telemetry yet; the robot ignores it. */
+export const NO_ANGLE = 0xFFFF;
+
+/**
+ * Creates the live ISS packet (version 0x03): all 8 BGA angles and both SARJ angles.
+ *
+ * Layout (21 bytes): [0x03, BGA1..BGA8, starboard SARJ, port SARJ], each angle
+ * 2 bytes little-endian. Slots 0-7 are BGA 1-8 (servos 1-8), slot 8 is the
+ * starboard SARJ and slot 9 the port SARJ.
+ *
+ * @param bga Eight BGA angles (0-360), or null where there is no data yet
+ * @param sarj Starboard and port SARJ angles (0-360), or null where there is no data yet
+ * @returns Uint8Array packet ready to send
+ */
+export function createIssPacket(bga: (number | null)[], sarj: (number | null)[]): Uint8Array {
+  const angles = [...bga.slice(0, 8), ...sarj.slice(0, 2)];
+  const packet = new Uint8Array(1 + 10 * 2);
+  packet[0] = 0x03;
+
+  for (let i = 0; i < 10; i++) {
+    const angle = angles[i];
+    const value = angle == null || Number.isNaN(angle)
+      ? NO_ANGLE
+      : Math.min(360, Math.max(0, Math.floor(angle)));
+    packet[1 + i * 2] = value & 0xFF;
+    packet[2 + i * 2] = (value >> 8) & 0xFF;
+  }
+
+  return packet;
+}
+
+/** First byte of the joint-angle telemetry the robot sends back (see telemetrySendJointAngles). */
+export const JOINT_TELEMETRY_ID = 0xA1;
+
+/** What the mini ISS reports about its own joints. null = no value yet / not driven. */
+export interface RobotJointTelemetry {
+  /** Angle each servo 1-8 was commanded to (0-180). Hobby servos have no position feedback. */
+  servoAngles: (number | null)[];
+  /** Measured starboard and port SARJ angles (0-359), from the motor encoders. */
+  sarjAngles: (number | null)[];
+  /** Date.now() when this report arrived */
+  receivedAt: number;
+}
+
+/**
+ * Decodes a joint-angle telemetry packet from the robot.
+ *
+ * Layout (13 bytes): [0xA1, servo 1..8 (1 byte, 0xFF = not set), starboard SARJ,
+ * port SARJ (2 bytes little-endian, 0xFFFF = none)].
+ *
+ * @returns The decoded report, or null if this is not a joint-angle packet
+ */
+export function parseJointTelemetry(data: DataView): RobotJointTelemetry | null {
+  if (data.byteLength < 13 || data.getUint8(0) !== JOINT_TELEMETRY_ID) return null;
+
+  const servoAngles: (number | null)[] = [];
+  for (let i = 0; i < 8; i++) {
+    const angle = data.getUint8(1 + i);
+    servoAngles.push(angle === 0xFF ? null : angle);
+  }
+
+  const sarjAngles: (number | null)[] = [];
+  for (let i = 0; i < 2; i++) {
+    const angle = data.getUint16(9 + i * 2, true);
+    sarjAngles.push(angle === NO_ANGLE ? null : angle);
+  }
+
+  return { servoAngles, sarjAngles, receivedAt: Date.now() };
+}
+
 /**
  * Helper to set a specific button bit
  * 

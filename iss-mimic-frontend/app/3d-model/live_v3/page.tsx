@@ -5,9 +5,10 @@ import { OrbitControls, Sky, Stars } from '@react-three/drei';
 import React, {useState, ChangeEvent, FormEvent, useEffect} from 'react';
 import BluetoothConnectionInfo from '@/components/BluetoothConnectionInfo';
 import { useBluetooth } from '@/contexts/BluetoothContext';
-import { createRobotPacket, setButtonBit } from '@/utils/robotPackets';
+import { createIssPacket } from '@/utils/robotPackets';
 import SolarPanel2 from '@/components/SolarPanel_v2';
 import TelemetryDisplay from '@/components/TelemetryDisplay';
+import MiniIssTelemetry from '@/components/MiniIssTelemetry';
 import { useTelemetry } from '@/contexts/TelemetryContext';
 import SolarPanel3 from '@/components/SolarPanel_v3';
 
@@ -17,45 +18,53 @@ export default function IssModel() {
     const telemetrySARJ1 = telemetryItems["S0000003"];
     const telemetrySARJ2 = telemetryItems["S0000004"];
     const telemetryBGA1 = telemetryItems["P4000007"];
+    const telemetryBGA2 = telemetryItems["P4000008"];
     const telemetryBGA3 = telemetryItems["P6000007"];
+    const telemetryBGA4 = telemetryItems["P6000008"];
     const telemetryBGA5 = telemetryItems["S4000007"];
+    const telemetryBGA6 = telemetryItems["S4000008"];
     const telemetryBGA7 = telemetryItems["S6000007"];
+    const telemetryBGA8 = telemetryItems["S6000008"];
 
-    const { 
+    const {
         isConnected,
         sendPacket,
     } = useBluetooth();
 
+    // null until the first value arrives, so the robot holds position instead of jumping to 0
+    const angleOf = (item?: { value: string }) => item?.value ? Number(item.value) : null;
+
     const sendTelemetryPacket = () => {
-        console.log("Preparing to send telemetry update...");
         if (isConnected) {
-            console.log("Device is connected, sending telemetry update...");
-            const packet = createRobotPacket({ 
-                angles: { 
-                    angle0: telemetryBGA1?.value ? Number(telemetryBGA1.value) : 0,
-                    angle1: telemetryBGA3?.value ? Number(telemetryBGA3.value) : 0,
-                    angle2: telemetryBGA5?.value ? Number(telemetryBGA5.value) : 0,
-                    angle3: telemetryBGA7?.value ? Number(telemetryBGA7.value) : 0,
-                    angle4: telemetrySARJ1?.value ? Number(telemetrySARJ1.value) : 0,
-                    angle5: telemetrySARJ2?.value ? Number(telemetrySARJ2.value) : 0
-                },
-                buttons: { byte0: 1 } 
-            });
+            // BGA n drives servo n (1-4 port/left, 5-8 starboard/right)
+            const packet = createIssPacket(
+                [telemetryBGA1, telemetryBGA2, telemetryBGA3, telemetryBGA4,
+                 telemetryBGA5, telemetryBGA6, telemetryBGA7, telemetryBGA8].map(angleOf),
+                [angleOf(telemetrySARJ1), angleOf(telemetrySARJ2)]
+            );
             sendPacket(packet);
-            console.log("Sending telemetry update:", packet);
         }
     };
 
-    // Monitor telemetry changes and send packet when they change
+    // Send when telemetry changes, and resend every second as a heartbeat: the robot
+    // drops a live connection after 5 s of silence (see drop_stale_link), which is how
+    // it recovers when Windows keeps a dead Bluetooth link open
     useEffect(() => {
         sendTelemetryPacket();
+        if (!isConnected) return;
+        const heartbeat = setInterval(sendTelemetryPacket, 1000);
+        return () => clearInterval(heartbeat);
     }, [
-        telemetrySARJ1?.value, 
-        telemetrySARJ2?.value, 
-        telemetryBGA1?.value, 
-        telemetryBGA3?.value, 
-        telemetryBGA5?.value, 
+        telemetrySARJ1?.value,
+        telemetrySARJ2?.value,
+        telemetryBGA1?.value,
+        telemetryBGA2?.value,
+        telemetryBGA3?.value,
+        telemetryBGA4?.value,
+        telemetryBGA5?.value,
+        telemetryBGA6?.value,
         telemetryBGA7?.value,
+        telemetryBGA8?.value,
         isConnected // Also monitor connection state
     ]);
 
@@ -71,9 +80,18 @@ export default function IssModel() {
                 <TelemetryDisplay itemId="S0000003" className="d-block mb-2" />
                 <TelemetryDisplay itemId="S0000004" className="d-block mb-2" />
                 <TelemetryDisplay itemId="P4000007" className="d-block mb-2" />
+                <TelemetryDisplay itemId="P4000008" className="d-block mb-2" />
                 <TelemetryDisplay itemId="P6000007" className="d-block mb-2" />
+                <TelemetryDisplay itemId="P6000008" className="d-block mb-2" />
                 <TelemetryDisplay itemId="S4000007" className="d-block mb-2" />
+                <TelemetryDisplay itemId="S4000008" className="d-block mb-2" />
                 <TelemetryDisplay itemId="S6000007" className="d-block mb-2" />
+                <TelemetryDisplay itemId="S6000008" className="d-block mb-2" />
+        </div>
+
+        {/* What the mini ISS reports back, beside the real ISS values */}
+        <div className="position-absolute bottom-0 start-0 p-3 bg-dark bg-opacity-75 text-white m-3 rounded shadow-sm" style={{ zIndex: 10, width: '320px' }}>
+            <MiniIssTelemetry />
         </div>
 
         

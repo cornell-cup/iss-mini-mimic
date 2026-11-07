@@ -1,11 +1,14 @@
 "use client";
 
 import { createContext, useState, useContext, useEffect, useCallback, useRef, ReactNode, JSX } from 'react';
+import { parseJointTelemetry, RobotJointTelemetry } from '@/utils/robotPackets';
 
 // BLE UUIDs
 const SERVICE_UUID_PESTOBLE = '27df26c5-83f4-4964-bae0-d7b7cb0a1f54';
 const CHARACTERISTIC_UUID_GAMEPAD = '452af57e-ad27-422c-88ae-76805ea641a9';
 const CHARACTERISTIC_UUID_TELEMETRY = '266d9d74-3e10-4fcd-88d2-cb63b5324d0c';
+// Must match robot_name in iss-mimic-backend/main.py
+const ROBOT_NAME_PREFIX = 'IssMimic';
 
 interface BluetoothContextType {
   isConnected: boolean;
@@ -13,6 +16,8 @@ interface BluetoothContextType {
   connectionStatus: string;
   statusColor: string;
   telemetryData: string;
+  /** Latest joint report from the mini ISS, or null before the first one arrives */
+  robotJoints: RobotJointTelemetry | null;
   connectToDevice: () => Promise<void>;
   disconnectFromDevice: () => Promise<void>;
   sendPacket: (byteArray: number[] | Uint8Array) => void;
@@ -30,18 +35,47 @@ export function BluetoothProvider({ children }: BluetoothProviderProps): JSX.Ele
   const [connectionStatus, setConnectionStatus] = useState<string>('Not Connected');
   const [statusColor, setStatusColor] = useState<string>('black');
   const [telemetryData, setTelemetryData] = useState<string>('No Data');
+  const [robotJoints, setRobotJoints] = useState<RobotJointTelemetry | null>(null);
   const [connecting, setConnecting] = useState<boolean>(false);
   
   // Use refs to persist these objects across renders
   const deviceRef = useRef<BluetoothDevice | null>(null);
   const gamepadCharacteristicRef = useRef<BluetoothRemoteGATTCharacteristic | null>(null);
   const telemetryCharacteristicRef = useRef<BluetoothRemoteGATTCharacteristic | null>(null);
+  // Chrome allows one GATT write at a time ("GATT operation already in progress"), so
+  // writes are serialized: while one is in flight only the newest packet waits, since
+  // every packet carries the full set of angles and older ones are obsolete.
+  const writingRef = useRef<boolean>(false);
+  const pendingPacketRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
+
+  const writeNextPacket = useCallback((): void => {
+    const characteristic = gamepadCharacteristicRef.current;
+    const data = pendingPacketRef.current;
+    if (writingRef.current || !characteristic || !data) return;
+
+    pendingPacketRef.current = null;
+    writingRef.current = true;
+    // The write is async, so a failure (e.g. packet larger than the BLE MTU) rejects the promise
+    characteristic.writeValueWithoutResponse(data)
+      .catch((error) => console.error(`Error sending ${data.length}-byte packet:`, error))
+      .finally(() => {
+        writingRef.current = false;
+        writeNextPacket();
+      });
+  }, []);
 
   // Handle telemetry data updates
   const handleTelemetryCharacteristic = useCallback((event: Event): void => {
     const value = (event.target as BluetoothRemoteGATTCharacteristic).value;
     if (!value) return;
-    
+
+    // Joint-angle reports start with a non-ASCII marker; everything else is battery text
+    const joints = parseJointTelemetry(value);
+    if (joints) {
+      setRobotJoints(joints);
+      return;
+    }
+
     let asciiString = '';
     for (let i = 0; i < Math.min(8, value.byteLength); i++) {
       asciiString += String.fromCharCode(value.getUint8(i));
@@ -53,6 +87,8 @@ export function BluetoothProvider({ children }: BluetoothProviderProps): JSX.Ele
   const handleDisconnection = useCallback((): void => {
     console.log('Device disconnected');
     setIsConnected(false);
+    setRobotJoints(null);
+    pendingPacketRef.current = null;
     setConnectionStatus('Not Connected');
     setStatusColor('black');
     // Optional: Auto-reconnect logic here
@@ -73,8 +109,15 @@ export function BluetoothProvider({ children }: BluetoothProviderProps): JSX.Ele
           throw new Error('Web Bluetooth API not supported in this browser');
         }
         
-        const selectedDevice = await navigator.bluetooth.requestDevice({ 
-          filters: [{ services: [SERVICE_UUID_PESTOBLE] }] 
+        // Filters are OR'ed. Chrome on Windows can miss the service UUID in the
+        // advertisement, so also match the robot by name; optionalServices still
+        // grants access to the PestoLink service on a device matched by name.
+        const selectedDevice = await navigator.bluetooth.requestDevice({
+          filters: [
+            { services: [SERVICE_UUID_PESTOBLE] },
+            { namePrefix: ROBOT_NAME_PREFIX },
+          ],
+          optionalServices: [SERVICE_UUID_PESTOBLE],
         });
         deviceRef.current = selectedDevice;
       }
@@ -148,6 +191,8 @@ export function BluetoothProvider({ children }: BluetoothProviderProps): JSX.Ele
       }
       
       setIsConnected(false);
+      setRobotJoints(null);
+      pendingPacketRef.current = null;
       setConnectionStatus('Not Connected');
       setStatusColor('black');
     } catch (error) {
@@ -165,17 +210,16 @@ export function BluetoothProvider({ children }: BluetoothProviderProps): JSX.Ele
   
   try {
     // Create a new Uint8Array with standard ArrayBuffer backing
-    const data = new Uint8Array(
-      byteArray instanceof Uint8Array 
+    pendingPacketRef.current = new Uint8Array(
+      byteArray instanceof Uint8Array
         ? Array.from(byteArray) // Convert to regular array first
         : byteArray
     );
-      
-    gamepadCharacteristicRef.current.writeValueWithoutResponse(data);
+    writeNextPacket();
   } catch (error) {
     console.error('Error sending data:', error);
   }
-  }, [isConnected]);
+  }, [isConnected, writeNextPacket]);
 
   // Clean up on unmount
   useEffect(() => {
@@ -194,6 +238,7 @@ export function BluetoothProvider({ children }: BluetoothProviderProps): JSX.Ele
     connectionStatus,
     statusColor,
     telemetryData,
+    robotJoints,
     connectToDevice,
     disconnectFromDevice,
     sendPacket,

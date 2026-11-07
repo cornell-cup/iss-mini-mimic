@@ -1,317 +1,184 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Sky, Stars } from '@react-three/drei';
-import SolarPanel from '@/components/SolarPanel';
-import React, {useState, ChangeEvent, FormEvent, useRef, useEffect} from 'react';
+import { OrbitControls, Stars } from '@react-three/drei';
+import React, { useState, ChangeEvent, FormEvent, useRef, useEffect } from 'react';
 import BluetoothConnectionInfo from '@/components/BluetoothConnectionInfo';
+import MiniIssTelemetry from '@/components/MiniIssTelemetry';
 import { useBluetooth } from '@/contexts/BluetoothContext';
-import { createRobotPacket, setButtonBit } from '@/utils/robotPackets';
-import SolarPanel2 from '@/components/SolarPanel_v2';
+import { useTelemetry } from '@/contexts/TelemetryContext';
+import { createIssPacket } from '@/utils/robotPackets';
 import SolarPanel3 from '@/components/SolarPanel_v3';
 
 // Animation configuration
 const ANIMATION_STEP_SIZE = 2; // Degrees to move per step
 const ANIMATION_INTERVAL_MS = 50; // Milliseconds between steps (50ms = 20 steps/sec)
 
+// The robot drops a live (v3) connection after 5 s of silence, so resend while idle
+const HEARTBEAT_MS = 1000;
+
+// Joint order matches the v3 packet: slots 0-7 = BGA 1-8 (servo n = BGA n),
+// slot 8 = starboard SARJ, slot 9 = port SARJ
+const LIVE_IDS = [
+    'P4000007', 'P4000008', 'P6000007', 'P6000008', // BGA 1-4 (port, servos 1-4)
+    'S4000007', 'S4000008', 'S6000007', 'S6000008', // BGA 5-8 (starboard, servos 5-8)
+    'S0000003', 'S0000004',                         // starboard SARJ, port SARJ
+];
+const STARBOARD_SARJ = 8;
+const PORT_SARJ = 9;
+
+const BGA_RESET = 90;
+const SARJ_RESET = 0;
+const INITIAL_ANGLES = [...Array(8).fill(BGA_RESET), SARJ_RESET, SARJ_RESET];
+
+// Dropdown choices: which packet slots a slider change applies to
+const BGA_TARGETS = [
+    { value: 'all', label: 'All BGAs (servos 1–8)', slots: [0, 1, 2, 3, 4, 5, 6, 7] },
+    { value: 'port', label: 'Port BGAs 1–4 (left)', slots: [0, 1, 2, 3] },
+    { value: 'starboard', label: 'Starboard BGAs 5–8 (right)', slots: [4, 5, 6, 7] },
+    ...[0, 1, 2, 3, 4, 5, 6, 7].map((slot) => ({
+        value: `bga${slot + 1}`, label: `BGA ${slot + 1} (servo ${slot + 1})`, slots: [slot],
+    })),
+];
+const SARJ_TARGETS = [
+    { value: 'all', label: 'Both SARJs', slots: [STARBOARD_SARJ, PORT_SARJ] },
+    { value: 'starboard', label: 'Starboard SARJ', slots: [STARBOARD_SARJ] },
+    { value: 'port', label: 'Port SARJ', slots: [PORT_SARJ] },
+];
+
+// 3D model: one panel per BGA. Port (left, negative x) turns with the port SARJ,
+// starboard (right) with the starboard SARJ. Inner panels are P4/S4, outer P6/S6.
+const PANELS = [
+    { bga: 0, position: [-2, 0, -1.5], color: 'red' },
+    { bga: 1, position: [-2, 0, 1.5], color: 'red' },
+    { bga: 2, position: [-4.5, 0, -1.5], color: 'orange' },
+    { bga: 3, position: [-4.5, 0, 1.5], color: 'orange' },
+    { bga: 4, position: [2, 0, -1.5], color: 'green' },
+    { bga: 5, position: [2, 0, 1.5], color: 'green' },
+    { bga: 6, position: [4.5, 0, -1.5], color: 'purple' },
+    { bga: 7, position: [4.5, 0, 1.5], color: 'purple' },
+] as const;
+
+const toRadians = (degrees: number) => degrees * (Math.PI / 180);
+
 export default function IssModel() {
-    // Alpha angle states - per group
-    const [selectedAlphaGroup, setSelectedAlphaGroup] = useState("all");
-    const [alphaSliderValue, setAlphaSliderValue] = useState(0);
+    // Current angles of all 10 joints (what the model shows and the robot is sent)
+    const [angles, setAngles] = useState<number[]>(INITIAL_ANGLES);
+    // Refs so the animation and heartbeat timers always see the latest values
+    const anglesRef = useRef<number[]>(INITIAL_ANGLES);
+    const targetsRef = useRef<number[]>(INITIAL_ANGLES);
+    const animationRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Store alpha angles for each group
-    const [groupAlphaAngles, setGroupAlphaAngles] = useState({
-        group1: 0, // Red and Orange panels
-        group2: 0  // Green and Purple panels
-    });
+    const [selectedBga, setSelectedBga] = useState('all');
+    const [bgaSliderValue, setBgaSliderValue] = useState(BGA_RESET);
+    const [selectedSarj, setSelectedSarj] = useState('all');
+    const [sarjSliderValue, setSarjSliderValue] = useState(SARJ_RESET);
 
-    // Beta angle states - per panel
-    const [selectedPanelBeta, setSelectedPanelBeta] = useState("all");
-    const [betaSliderValue, setBetaSliderValue] = useState(90);
+    const { isConnected, sendPacket } = useBluetooth();
+    const { telemetryItems } = useTelemetry();
 
-    // Store individual beta angles for each panel
-    const [panelBetaAngles, setPanelBetaAngles] = useState({
-        panel1: 90, // Red
-        panel2: 90, // Orange
-        panel3: 90, // Green
-        panel4: 90  // Purple
-    });
+    const sendAngles = (current: number[]) => {
+        if (isConnected) {
+            sendPacket(createIssPacket(current.slice(0, 8), current.slice(8, 10)));
+        }
+    };
 
-    // Animation refs
-    const alphaAnimationRef = useRef<NodeJS.Timeout | null>(null);
-    const betaAnimationRef = useRef<NodeJS.Timeout | null>(null);
+    // Send on connect, then resend every second as a heartbeat
+    useEffect(() => {
+        sendAngles(anglesRef.current);
+        if (!isConnected) return;
+        const heartbeat = setInterval(() => sendAngles(anglesRef.current), HEARTBEAT_MS);
+        return () => clearInterval(heartbeat);
+    }, [isConnected]);
 
-    const {
-        isConnected,
-        sendPacket,
-    } = useBluetooth();
-
-    // Cleanup animations on unmount
+    // Cleanup animation on unmount
     useEffect(() => {
         return () => {
-            if (alphaAnimationRef.current) clearInterval(alphaAnimationRef.current);
-            if (betaAnimationRef.current) clearInterval(betaAnimationRef.current);
+            if (animationRef.current) clearInterval(animationRef.current);
         };
     }, []);
 
-    //Send all angles functions
-    const sendAllAngles = () => {
-        if (isConnected) {
-            const packet = createRobotPacket({
-                angles: {
-                    angle0: panelBetaAngles.panel1,  // Panel 1 beta
-                    angle1: panelBetaAngles.panel2,  // Panel 2 beta
-                    angle2: panelBetaAngles.panel3,  // Panel 3 beta
-                    angle3: panelBetaAngles.panel4,  // Panel 4 beta
-                    angle4: groupAlphaAngles.group1, // Group 1 alpha
-                    angle5: groupAlphaAngles.group2  // Group 2 alpha
-                },
-                buttons: { byte0: 1 }
+    // Smoothly move the given slots toward their targets, sending each step to the robot
+    const animateTo = (slots: number[], target: number) => {
+        const targets = [...targetsRef.current];
+        slots.forEach((slot) => { targets[slot] = target; });
+        animateToTargets(targets);
+    };
+
+    const animateToTargets = (targets: number[]) => {
+        targetsRef.current = targets;
+        if (animationRef.current) return; // the running animation picks up the new targets
+
+        animationRef.current = setInterval(() => {
+            let allReached = true;
+            const next = anglesRef.current.map((current, slot) => {
+                const diff = targetsRef.current[slot] - current;
+                if (Math.abs(diff) > 0.5) {
+                    allReached = false;
+                    return current + Math.sign(diff) * Math.min(ANIMATION_STEP_SIZE, Math.abs(diff));
+                }
+                return targetsRef.current[slot];
             });
-            sendPacket(packet);
-            console.log("All angles packet:", packet);
-        }
-    };
 
-    // Helper function to animate alpha angles smoothly
-    const animateAlphaAngles = (targetAlphaAngles: typeof groupAlphaAngles) => {
-        // Clear any existing animation
-        if (alphaAnimationRef.current) {
-            clearInterval(alphaAnimationRef.current);
-        }
-
-        // Create copies for animation
-        const currentAngles = { ...groupAlphaAngles };
-        const targetAngles = { ...targetAlphaAngles };
-
-        alphaAnimationRef.current = setInterval(() => {
-            let allReached = true;
-            const newAngles = { ...currentAngles };
-
-            // Animate each group
-            for (const key of Object.keys(newAngles) as Array<keyof typeof newAngles>) {
-                const current = newAngles[key];
-                const target = targetAngles[key];
-                const diff = target - current;
-
-                if (Math.abs(diff) > 0.5) {
-                    allReached = false;
-                    const step = Math.sign(diff) * Math.min(ANIMATION_STEP_SIZE, Math.abs(diff));
-                    newAngles[key] = current + step;
-                } else {
-                    newAngles[key] = target;
-                }
-            }
-
-            // Update state and send packet
-            currentAngles.group1 = newAngles.group1;
-            currentAngles.group2 = newAngles.group2;
-            setGroupAlphaAngles(newAngles);
-
-            if (isConnected) {
-                const packet = createRobotPacket({
-                    angles: {
-                        angle0: panelBetaAngles.panel1,
-                        angle1: panelBetaAngles.panel2,
-                        angle2: panelBetaAngles.panel3,
-                        angle3: panelBetaAngles.panel4,
-                        angle4: newAngles.group1,
-                        angle5: newAngles.group2
-                    },
-                    buttons: { byte0: 1 }
-                });
-                sendPacket(packet);
-            }
+            anglesRef.current = next;
+            setAngles(next);
+            sendAngles(next);
 
             // Stop animation when all angles reached
-            if (allReached && alphaAnimationRef.current) {
-                clearInterval(alphaAnimationRef.current);
-                alphaAnimationRef.current = null;
+            if (allReached && animationRef.current) {
+                clearInterval(animationRef.current);
+                animationRef.current = null;
             }
         }, ANIMATION_INTERVAL_MS);
     };
 
-    // Helper function to animate beta angles smoothly
-    const animateBetaAngles = (targetBetaAngles: typeof panelBetaAngles) => {
-        // Clear any existing animation
-        if (betaAnimationRef.current) {
-            clearInterval(betaAnimationRef.current);
-        }
+    const slotsFor = (targets: typeof BGA_TARGETS, value: string) =>
+        targets.find((t) => t.value === value)?.slots ?? [];
 
-        // Create copies for animation
-        const currentAngles = { ...panelBetaAngles };
-        const targetAngles = { ...targetBetaAngles };
-
-        betaAnimationRef.current = setInterval(() => {
-            let allReached = true;
-            const newAngles = { ...currentAngles };
-
-            // Animate each panel
-            for (const key of Object.keys(newAngles) as Array<keyof typeof newAngles>) {
-                const current = newAngles[key];
-                const target = targetAngles[key];
-                const diff = target - current;
-
-                if (Math.abs(diff) > 0.5) {
-                    allReached = false;
-                    const step = Math.sign(diff) * Math.min(ANIMATION_STEP_SIZE, Math.abs(diff));
-                    newAngles[key] = current + step;
-                } else {
-                    newAngles[key] = target;
-                }
-            }
-
-            // Update state and send packet
-            currentAngles.panel1 = newAngles.panel1;
-            currentAngles.panel2 = newAngles.panel2;
-            currentAngles.panel3 = newAngles.panel3;
-            currentAngles.panel4 = newAngles.panel4;
-            setPanelBetaAngles(newAngles);
-
-            if (isConnected) {
-                const packet = createRobotPacket({
-                    angles: {
-                        angle0: newAngles.panel1,
-                        angle1: newAngles.panel2,
-                        angle2: newAngles.panel3,
-                        angle3: newAngles.panel4,
-                        angle4: groupAlphaAngles.group1,
-                        angle5: groupAlphaAngles.group2
-                    },
-                    buttons: { byte0: 1 }
-                });
-                sendPacket(packet);
-            }
-
-            // Stop animation when all angles reached
-            if (allReached && betaAnimationRef.current) {
-                clearInterval(betaAnimationRef.current);
-                betaAnimationRef.current = null;
-            }
-        }, ANIMATION_INTERVAL_MS);
+    // BGA handlers
+    const handleBgaSelection = (event: ChangeEvent<HTMLSelectElement>) => {
+        setSelectedBga(event.target.value);
+        // Show the first selected joint's current angle on the slider
+        setBgaSliderValue(Math.round(anglesRef.current[slotsFor(BGA_TARGETS, event.target.value)[0]]));
     };
 
-    // Alpha handlers
-    const handleAlphaSliderChange = (event: ChangeEvent<HTMLInputElement>) => {
-        setAlphaSliderValue(Number(event.target.value));
-    };
-
-    const handleAlphaGroupSelection = (event: ChangeEvent<HTMLSelectElement>) => {
-        setSelectedAlphaGroup(event.target.value);
-        
-        // Update slider to show the selected group's current alpha angle
-        if (event.target.value !== "all") {
-            setAlphaSliderValue(groupAlphaAngles[event.target.value as keyof typeof groupAlphaAngles]);
-        } else {
-            // When "all" is selected, show 0 or some default value
-            setAlphaSliderValue(0);
-        }
-    };
-
-    const handleSubmitAlpha = (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmitBga = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-
-        // Create target alpha angles
-        let targetAlphaAngles = {...groupAlphaAngles};
-
-        if (selectedAlphaGroup === "all") {
-            // Update all groups
-            targetAlphaAngles = {
-                group1: alphaSliderValue,
-                group2: alphaSliderValue
-            };
-        } else {
-            // Update only the selected group
-            targetAlphaAngles[selectedAlphaGroup as keyof typeof targetAlphaAngles] = alphaSliderValue;
-        }
-
-        // Animate to the target angles
-        animateAlphaAngles(targetAlphaAngles);
-    };
-    
-    const handleResetAlpha = () => {
-        // Create target alpha angles for reset
-        let targetAlphaAngles = {...groupAlphaAngles};
-
-        if (selectedAlphaGroup === "all") {
-            // Reset all groups
-            targetAlphaAngles = {
-                group1: 0,
-                group2: 0
-            };
-        } else {
-            // Reset only the selected group
-            targetAlphaAngles[selectedAlphaGroup as keyof typeof targetAlphaAngles] = 0;
-        }
-
-        setAlphaSliderValue(0);
-
-        // Animate to the target angles
-        animateAlphaAngles(targetAlphaAngles);
+        animateTo(slotsFor(BGA_TARGETS, selectedBga), bgaSliderValue);
     };
 
-    // Beta handlers
-    const handleBetaSliderChange = (event: ChangeEvent<HTMLInputElement>) => {
-        setBetaSliderValue(Number(event.target.value));
+    const handleResetBga = () => {
+        setBgaSliderValue(BGA_RESET);
+        animateTo(slotsFor(BGA_TARGETS, selectedBga), BGA_RESET);
     };
 
-    const handleBetaPanelSelection = (event: ChangeEvent<HTMLSelectElement>) => {
-        setSelectedPanelBeta(event.target.value);
-
-        // Update slider to show the selected panel's current beta angle
-        if (event.target.value !== "all") {
-            setBetaSliderValue(panelBetaAngles[event.target.value as keyof typeof panelBetaAngles]);
-        } else {
-            // When "all" is selected, show the average or first panel's value
-            setBetaSliderValue(panelBetaAngles.panel1);
-        }
+    // SARJ handlers
+    const handleSarjSelection = (event: ChangeEvent<HTMLSelectElement>) => {
+        setSelectedSarj(event.target.value);
+        setSarjSliderValue(Math.round(anglesRef.current[slotsFor(SARJ_TARGETS, event.target.value)[0]]));
     };
 
-    const handleSubmitBeta = (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmitSarj = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-
-        // Create target beta angles
-        let targetBetaAngles = {...panelBetaAngles};
-
-        if (selectedPanelBeta === "all") {
-            // Update all panels
-            targetBetaAngles = {
-                panel1: betaSliderValue,
-                panel2: betaSliderValue,
-                panel3: betaSliderValue,
-                panel4: betaSliderValue
-            };
-        } else {
-            // Update only the selected panel
-            targetBetaAngles[selectedPanelBeta as keyof typeof targetBetaAngles] = betaSliderValue;
-        }
-
-        // Animate to the target angles
-        animateBetaAngles(targetBetaAngles);
+        animateTo(slotsFor(SARJ_TARGETS, selectedSarj), sarjSliderValue);
     };
-    
-    const handleResetBeta = () => {
-        // Create target beta angles for reset
-        let targetBetaAngles = {...panelBetaAngles};
 
-        if (selectedPanelBeta === "all") {
-            // Reset all panels
-            targetBetaAngles = {
-                panel1: 90,
-                panel2: 90,
-                panel3: 90,
-                panel4: 90
-            };
-        } else {
-            // Reset only the selected panel
-            targetBetaAngles[selectedPanelBeta as keyof typeof targetBetaAngles] = 90;
-        }
-
-        setBetaSliderValue(90);
-
-        // Animate to the target angles
-        animateBetaAngles(targetBetaAngles);
+    const handleResetSarj = () => {
+        setSarjSliderValue(SARJ_RESET);
+        animateTo(slotsFor(SARJ_TARGETS, selectedSarj), SARJ_RESET);
     };
+
+    // Start from the real ISS position: move every joint that has live data to it
+    const handleCopyLive = () => {
+        const targets = targetsRef.current.map((current, slot) => {
+            const live = telemetryItems[LIVE_IDS[slot]]?.value;
+            return live ? Math.round(Number(live)) : current;
+        });
+        animateToTargets(targets);
+        setBgaSliderValue(targets[slotsFor(BGA_TARGETS, selectedBga)[0]]);
+        setSarjSliderValue(targets[slotsFor(SARJ_TARGETS, selectedSarj)[0]]);
+    };
+    const hasLiveData = LIVE_IDS.some((id) => telemetryItems[id]?.value);
 
     return (
     <div className="position-relative">
@@ -320,89 +187,95 @@ export default function IssModel() {
             <BluetoothConnectionInfo />
         </div>
 
-        {/* Telemetry overlay */}
+        {/* Manual controls */}
         <div className="position-absolute top-0 end-0 p-3 bg-dark bg-opacity-75 text-white m-3 rounded shadow-sm" style={{ zIndex: 10, maxWidth: '300px' }}>
-            <h5 className="mb-3 fw-bold">Alpha Angle for Solar Panels</h5>
-            <form onSubmit={handleSubmitAlpha}>
+            <button
+                type="button"
+                className="btn btn-outline-light btn-sm mb-3 w-100"
+                onClick={handleCopyLive}
+                disabled={!hasLiveData}
+            >
+                Copy live ISS values
+            </button>
+
+            <h5 className="mb-3 fw-bold">BGA (Beta) Angles</h5>
+            <form onSubmit={handleSubmitBga}>
                 <div className="mb-3">
-                    <label htmlFor="alpha-group-select" className="form-label">Select Group:</label>
-                    <select 
-                        id="alpha-group-select" 
+                    <label htmlFor="bga-select" className="form-label">Select BGA:</label>
+                    <select
+                        id="bga-select"
                         className="form-select"
-                        value={selectedAlphaGroup}
-                        onChange={handleAlphaGroupSelection}
+                        value={selectedBga}
+                        onChange={handleBgaSelection}
                     >
-                        <option value="all">All Groups</option>
-                        <option value="group1">Group 1 (Red and Orange)</option>
-                        <option value="group2">Group 2 (Green and Purple)</option>
+                        {BGA_TARGETS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
                 </div>
-                <label htmlFor="alpha-slider">Select a value:</label>
+                <label htmlFor="bga-slider">Select a value:</label>
                 <input
                     type="range"
-                    id="alpha-slider"
+                    id="bga-slider"
                     min="0"
                     max="360"
-                    value={alphaSliderValue}
-                    onChange={handleAlphaSliderChange}
+                    value={bgaSliderValue}
+                    onChange={(e) => setBgaSliderValue(Number(e.target.value))}
                 />
-                <input  
-                    onChange={(e) => setAlphaSliderValue(Number(e.target.value))} 
-                    value={alphaSliderValue}
+                <input
+                    onChange={(e) => setBgaSliderValue(Number(e.target.value))}
+                    value={bgaSliderValue}
                     type="number"
+                    min="0"
+                    max="360"
                 />
-                <button type="submit" className="btn btn-primary">Set Alpha</button>
-                <button 
-                    type="button" 
-                    className="btn btn-primary"
-                    onClick={handleResetAlpha}
-                >
+                <button type="submit" className="btn btn-primary">Set BGA</button>
+                <button type="button" className="btn btn-primary" onClick={handleResetBga}>
                     Reset
                 </button>
             </form>
 
-            <h5 className="mb-3 mt-3 fw-bold">Beta Angle for Solar Panels</h5>
-            <form onSubmit={handleSubmitBeta}>
+            <h5 className="mb-3 mt-3 fw-bold">SARJ (Alpha) Angles</h5>
+            <form onSubmit={handleSubmitSarj}>
                 <div className="mb-3">
-                    <label htmlFor="panel-select" className="form-label">Select Panel:</label>
-                    <select 
-                        id="panel-select" 
+                    <label htmlFor="sarj-select" className="form-label">Select SARJ:</label>
+                    <select
+                        id="sarj-select"
                         className="form-select"
-                        value={selectedPanelBeta}
-                        onChange={handleBetaPanelSelection}
+                        value={selectedSarj}
+                        onChange={handleSarjSelection}
                     >
-                        <option value="all">All Panels</option>
-                        <option value="panel1">Red Panel 1</option>
-                        <option value="panel2">Orange Panel 2</option>
-                        <option value="panel3">Green Panel 3</option>
-                        <option value="panel4">Purple Panel 4</option>
+                        {SARJ_TARGETS.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
                     </select>
                 </div>
-                <label htmlFor="beta-slider">Select a value:</label>
+                <label htmlFor="sarj-slider">Select a value:</label>
                 <input
                     type="range"
-                    id="beta-slider"
+                    id="sarj-slider"
                     min="0"
                     max="360"
-                    value={betaSliderValue}
-                    onChange={handleBetaSliderChange}
+                    value={sarjSliderValue}
+                    onChange={(e) => setSarjSliderValue(Number(e.target.value))}
                 />
-                <input  
-                    onChange={(e) => setBetaSliderValue(Number(e.target.value))} 
-                    value={betaSliderValue}
+                <input
+                    onChange={(e) => setSarjSliderValue(Number(e.target.value))}
+                    value={sarjSliderValue}
                     type="number"
+                    min="0"
+                    max="360"
                 />
-                <button type="submit" className="btn btn-primary">Set Beta</button>
-                <button 
-                    type="button" 
-                    className="btn btn-primary" 
-                    onClick={handleResetBeta}
-                >
+                <button type="submit" className="btn btn-primary">Set SARJ</button>
+                <button type="button" className="btn btn-primary" onClick={handleResetSarj}>
                     Reset
                 </button>
             </form>
+            <div className="small mt-2 text-white-50">
+                SARJs only move the robot once SARJ_ENABLED is on in main.py.
+            </div>
         </div>
-        
+
+        {/* What the mini ISS reports back */}
+        <div className="position-absolute bottom-0 start-0 p-3 bg-dark bg-opacity-75 text-white m-3 rounded shadow-sm" style={{ zIndex: 10, width: '320px' }}>
+            <MiniIssTelemetry />
+        </div>
 
         {/* 3D Canvas */}
         <div style={{ height: '100vh', width: '100vw' }}>
@@ -421,68 +294,30 @@ export default function IssModel() {
                 <mesh>
                     <sphereGeometry args={[1, 32, 32]} />
                     <meshStandardMaterial color="blue" />
-                    {/*Mesh for grouping the 4 panels to be moved by alpha angle*/}
-                    <mesh rotation={[groupAlphaAngles.group2 * (Math.PI/180),0,0]}>
-                    {/* Group 2: Green Panel */}
-                    <SolarPanel3 
-                        position={[2, 0, 1.5]} 
-                        rotation={[0, 0, panelBetaAngles.panel3 * (Math.PI/180)]} 
-                        color="green"
-                    />
-
-                    <SolarPanel3 
-                        position={[4.5, 0, 1.5]} 
-                        rotation={[0, 0, panelBetaAngles.panel3 * (Math.PI/180)]} 
-                        color="green"
-                    />
-
-
-                    {/* Group 2: Purple Panel */}
-                    <SolarPanel3 
-                        position={[4.5, 0, -1.5]} 
-                        rotation={[0, 0, panelBetaAngles.panel4 * (Math.PI/180)]} 
-                        color="purple"
-                    />
-
-                    <SolarPanel3 
-                        position={[2, 0, -1.5]} 
-                        rotation={[0, 0, panelBetaAngles.panel4 * (Math.PI/180)]} 
-                        color="purple"
-                    />
+                    {/* Port side (left): BGA 1-4, turned by the port SARJ */}
+                    <mesh rotation={[toRadians(angles[PORT_SARJ]), 0, 0]}>
+                        {PANELS.filter((p) => p.bga < 4).map((p) => (
+                            <SolarPanel3
+                                key={p.bga}
+                                position={[...p.position]}
+                                rotation={[0, 0, toRadians(angles[p.bga])]}
+                                color={p.color}
+                            />
+                        ))}
                     </mesh>
 
-                    {/*Mesh for grouping the 4 panels to be moved by alpha angle*/}
-                    <mesh rotation={[groupAlphaAngles.group1 * (Math.PI/180),0,0]}>
-                    {/* Group 1: Orange Panel */}
-                    <SolarPanel3 
-                        position={[-2, 0, 1.5]} 
-                        rotation={[0, 0, panelBetaAngles.panel2 * (Math.PI/180)]} 
-                        color="orange" 
-                    />
-
-                    <SolarPanel3 
-                        position={[-4.5, 0, 1.5]} 
-                        rotation={[0, 0, panelBetaAngles.panel2 * (Math.PI/180)]} 
-                        color="orange"
-                    />
-
-
-                    {/* Group 1: Red Panel */}
-                    
-
-                    <SolarPanel3 
-                        position={[-4.5, 0, -1.5]} 
-                        rotation={[0, 0, panelBetaAngles.panel1 * (Math.PI/180)]} 
-                        color="red"
-                    />
-
-                    <SolarPanel3 
-                        position={[-2, 0, -1.5]} 
-                        rotation={[0, 0, panelBetaAngles.panel1 * (Math.PI/180)]} 
-                        color="red" 
-                    />
+                    {/* Starboard side (right): BGA 5-8, turned by the starboard SARJ */}
+                    <mesh rotation={[toRadians(angles[STARBOARD_SARJ]), 0, 0]}>
+                        {PANELS.filter((p) => p.bga >= 4).map((p) => (
+                            <SolarPanel3
+                                key={p.bga}
+                                position={[...p.position]}
+                                rotation={[0, 0, toRadians(angles[p.bga])]}
+                                color={p.color}
+                            />
+                        ))}
                     </mesh>
-                </mesh> 
+                </mesh>
                 <OrbitControls />
             </Canvas>
         </div>
